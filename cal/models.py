@@ -116,7 +116,7 @@ class Occupancy(Model):
             raise ValidationError(_(f'L\'établissement ferme à {conf.end_time().strftime("%H:%M")}'))
 
         if datetime.combine(date.today(), datetime.now().time()) < datetime.combine(self.date, self.start_time):
-            raise ValidationError(_('Les informations de date et heure sont passées'))
+            raise ValidationError(_('Les informations de date et d\'heure sont passées'))
 
         event_start = datetime.combine(self.date, self.start_time)
         event_end = event_start + self.duration
