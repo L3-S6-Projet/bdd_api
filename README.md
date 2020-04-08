@@ -23,7 +23,7 @@ The scripts should be run before starting the app. Thee following guide will sho
 ### Windows
 Go to the Run/Debug Configuration page
 
-![Run Debug Config](/readme_images/run_debug_edit.png)*
+![Run Debug Config](/readme_images/run_debug_edit.png)
 
 Then we need to add an action to be executed before launch
 
