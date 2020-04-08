@@ -1,5 +1,5 @@
 # Projet L3 S6
-[![Build Status]()]()
+[![Build Status](https://travis-ci.com/tag166tt/l3_s6_projet.svg?token=undefined&branch=master)](https://travis-ci.com/tag166tt/l3_s6_projet)
 [![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://dependabot.com/)
 
 ## Team Members
