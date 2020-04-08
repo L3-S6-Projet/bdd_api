@@ -133,7 +133,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_DIRS = [
-    # os.path.join(BASE_DIR, 'collectedStaticFiles'),
     os.path.join(STATIC_ROOT, 'uploads'),
     os.path.join(STATIC_ROOT, 'images'),
     os.path.join(STATIC_ROOT, 'js'),
