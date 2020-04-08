@@ -21,10 +21,15 @@ The test user is identified by :
 The scripts should be run before starting the app. Thee following guide will show you how to add the proper script to run before build.
 
 ### Windows
-1) Got to the Run/Debug Configuration page
+Go to the Run/Debug Configuration page
+
 ![Run Debug Config](/readme_images/run_debug_edit.png)
-2) Then we need to add an action to be executed before launch
+Then we need to add an action to be executed before launch
+
 ![Run Debug Plus](/readme_images/run_conf.png)
+
 ![Run Debug External Tool](/readme_images/run_conf_plus.png)
-3) We now need to add the proper information
+
+We now need to add the proper information
+
 ![Tool Config](/readme_images/tool_config.png)
