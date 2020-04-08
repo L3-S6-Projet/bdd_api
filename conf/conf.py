@@ -3,7 +3,7 @@ from datetime import time
 
 
 def __load() -> dict:
-    with open('conf.json') as f:
+    with open('conf/conf.json') as f:
         return json.load(f)
 
 

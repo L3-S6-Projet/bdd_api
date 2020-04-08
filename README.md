@@ -16,7 +16,7 @@ Build scripts are included in the project to run DB migrations and setup a basic
 
 The test user is identified by :
 - Username: test
-- Password: test
+- Password: passwdtest
 
 The scripts should be run before starting the app. Thee following guide will show you how to add the proper script to run before build.
 

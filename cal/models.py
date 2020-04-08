@@ -1,8 +1,13 @@
+import datetime as dt
+from datetime import date, timedelta, datetime
+
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db.models import Model, CharField, IntegerField, ForeignKey, DateField, TimeField, DurationField, CASCADE
 from django.utils.translation import gettext as _
 
-from .validators import start_time_validator, end_time_validator
+from conf import conf
+from .validators import start_time_validator
 
 year = [
     ('L1', _('L1')),
@@ -21,9 +26,19 @@ grades = [
     ('MONI', _('Moniteur')),
 ]
 
+session_type = [
+    ('CM', _('CM')),
+    ('TD', _('TD')),
+    ('TP', _('TP')),
+]
+
 
 class Teacher(User):
     grade = CharField(max_length=4, verbose_name=_('Grade'), choices=grades, null=False)
+
+    class Meta:
+        verbose_name = _('Interevenant')
+        verbose_name_plural = _('Intervenants')
 
 
 class Class(Model):
@@ -48,21 +63,9 @@ class Class(Model):
 class Student(User):
     _class = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Classe'), null=False)
 
-
-class StudentClasses(Model):
-    _class = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Classe'), null=False)
-    student = ForeignKey(Student, on_delete=CASCADE, verbose_name=_('Étudiant'), null=False)
-
-    def save(self, *args, **kwargs):
-        super(StudentClasses, self).save(*args, **kwargs)
-
-    def __str__(self):
-        return f'{self._class} {self.student}'
-
     class Meta:
-        verbose_name = _('Groupe Etudiant')
-        verbose_name_plural = _('Groupe Etudiants')
-        unique_together = [('_class', 'student',), ]
+        verbose_name = _('Étudiants')
+        verbose_name_plural = _('Étudiants')
 
 
 class Rooms(Model):
@@ -83,16 +86,57 @@ class Rooms(Model):
         verbose_name_plural = _('Salles')
 
 
-class Occupancy(Model):
-    room = ForeignKey(Rooms, on_delete=CASCADE, verbose_name=_('Salle'), null=False)
-    date = DateField(verbose_name=_('Date'), null=False)
-    start_time = TimeField(verbose_name=_('Début'), null=False, validators=[start_time_validator, ])
-    duration = DurationField(verbose_name=_('Durée'), null=False)
-
-    def clean(self, *args, **kwargs):
-        end_time_validator(self.date, self.start_time, self.duration)
+class Subject(Model):
+    name = CharField(max_length=255, verbose_name=_('Matière'), null=False)
 
     def save(self, *args, **kwargs):
+        super(Subject, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _('Matière')
+        verbose_name_plural = _('Matières')
+
+
+class Occupancy(Model):
+    room = ForeignKey(Rooms, on_delete=CASCADE, verbose_name=_('Salle'), null=False)
+    date = DateField(verbose_name=_('Date'), null=False, default=dt.date.today)
+    start_time = TimeField(verbose_name=_('Début'), null=False, validators=[start_time_validator, ], default='08:00:00')
+    duration = DurationField(verbose_name=_('Durée'), null=False, default='01:00:00')
+    subject = ForeignKey(Subject, on_delete=CASCADE, verbose_name=_('Matière'), null=False)
+    session_type = CharField(max_length=2, verbose_name=_('Type'), null=False, choices=session_type)
+
+    def __validate_fields(self):
+        if datetime.combine(self.date, conf.end_time()) < datetime.combine(self.date, self.start_time) + self.duration:
+            raise ValidationError(_(f'L\'établissement ferme à {conf.end_time().strftime("%H:%M")}'))
+
+        if datetime.combine(date.today(), datetime.now().time()) < datetime.combine(self.date, self.start_time):
+            raise ValidationError(_('Les informations de date et heure sont passées'))
+
+        event_start = datetime.combine(self.date, self.start_time)
+        event_end = event_start + self.duration
+
+        for occupancy in Occupancy.objects.all().filter(room=self.room, date__gte=self.date,
+                                                        date__lt=self.date + timedelta(days=1)):
+            occupancy_start = datetime.combine(occupancy.date, occupancy.start_time)
+            occupancy_end = occupancy_start + occupancy.duration
+            if event_start < occupancy_start > event_end:
+                raise ValidationError(_(
+                    f'Cet salle est déjà prise de '
+                    f'{occupancy_start.strftime("%H:%M")} à {occupancy_end.strftime("%H:%MM")}'))
+
+            if occupancy_start < event_end < occupancy_end:
+                raise ValidationError(_(
+                    f'Cet salle est déjà prise de '
+                    f'{occupancy_start.strftime("%H:%M")} à {occupancy_end.strftime("%H:%MM")}'))
+
+    def save(self, *args, **kwargs):
+        self.__validate_fields()
         super(Occupancy, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -104,7 +148,7 @@ class Occupancy(Model):
     class Meta:
         verbose_name = _('Occupation')
         verbose_name_plural = _('Occupations')
-        unique_together = [('room', 'start_time', 'duration',), ]
+        unique_together = [('room', 'date', 'start_time', 'duration',), ]
 
 
 class TeacherOccupancy(Model):
