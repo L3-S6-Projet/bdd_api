@@ -151,33 +151,57 @@ class Occupancy(Model):
         unique_together = [('room', 'date', 'start_time', 'duration',), ]
 
 
+def occupancy_overlap_validator_for(o, model):
+    obj = _('Cet intervenant') if model == TeacherOccupancy else _('Cette classe')
+
+    occupancy_start = datetime.combine(o.occupancy.date, o.occupancy.start_time)
+    occupancy_end = occupancy_start + o.occupancy.duration
+    for teacher_occupancy in model.objects.all().filter(obj=o.obj, occupancy__date=o.occupancy.date):
+        occupancy_object = teacher_occupancy.occupancy
+        occupancy_object_start = datetime.combine(occupancy_object.date, occupancy_object.start_time)
+        occupancy_object_end = occupancy_object_start + occupancy_object.duration
+        if occupancy_object_start < occupancy_start < occupancy_object_end or \
+                occupancy_start < occupancy_object_start < occupancy_end:
+            raise ValidationError(_(
+                f'{obj} est déjà occupé de '
+                f'{occupancy_object_start.strftime("%H:%M")} à {occupancy_object_end.strftime("%H:%M")}'))
+
+
 class TeacherOccupancy(Model):
     occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupation'), null=False)
-    teacher = ForeignKey(Teacher, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False)
+    obj = ForeignKey(Teacher, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False)
+
+    def __validate_fields(self):
+        occupancy_overlap_validator_for(self, TeacherOccupancy)
 
     def save(self, *args, **kwargs):
+        self.__validate_fields()
         super(TeacherOccupancy, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.teacher} {self.teacher} {self.occupancy}'
+        return f'{self.obj} {self.obj} {self.occupancy}'
 
     class Meta:
         verbose_name = _('Intervenant')
         verbose_name_plural = _('Intervenants')
-        unique_together = [('occupancy', 'teacher',), ]
+        unique_together = [('occupancy', 'obj',), ]
 
 
 class ClassOccupancy(Model):
     occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupancy'), null=False)
-    _class = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Class'), null=False)
+    obj = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Class'), null=False)
+
+    def __validate_fields(self):
+        occupancy_overlap_validator_for(self, ClassOccupancy)
 
     def save(self, *args, **kwargs):
+        self.__validate_fields()
         super(ClassOccupancy, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self._class} {self.occupancy}'
+        return f'{self.obj} {self.occupancy}'
 
     class Meta:
         verbose_name = _('Classe')
         verbose_name_plural = _('Classes')
-        unique_together = [('occupancy', '_class',), ]
+        unique_together = [('occupancy', 'obj',), ]
