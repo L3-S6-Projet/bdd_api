@@ -7,7 +7,7 @@ from django.db.models import Model, CharField, IntegerField, ForeignKey, DateFie
 from django.utils.translation import gettext as _
 
 from conf import conf
-from .validators import start_time_validator
+from .validators import start_time_validator, max_duration_validation
 
 year = [
     ('L1', _('L1')),
@@ -107,7 +107,8 @@ class Occupancy(Model):
     room = ForeignKey(Rooms, on_delete=CASCADE, verbose_name=_('Salle'), null=False)
     date = DateField(verbose_name=_('Date'), null=False, default=dt.date.today)
     start_time = TimeField(verbose_name=_('Début'), null=False, validators=[start_time_validator, ], default='08:00:00')
-    duration = DurationField(verbose_name=_('Durée'), null=False, default='01:00:00')
+    duration = DurationField(verbose_name=_('Durée'), null=False, validators=[max_duration_validation],
+                             default=timedelta(days=0, hours=1, minutes=0, seconds=0))
     subject = ForeignKey(Subject, on_delete=CASCADE, verbose_name=_('Matière'), null=False)
     session_type = CharField(max_length=2, verbose_name=_('Type'), null=False, choices=session_type)
 
@@ -179,7 +180,8 @@ def occupancy_overlap_validator_for(o, model):
 
 
 class TeacherOccupancy(Model):
-    occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupation'), null=False)
+    occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupation'), related_name='teachers',
+                           null=False)
     obj = ForeignKey(Teacher, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False)
 
     def clean(self):
@@ -200,7 +202,8 @@ class TeacherOccupancy(Model):
 
 
 class ClassOccupancy(Model):
-    occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupancy'), null=False)
+    occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupancy'), related_name='classes',
+                           null=False)
     obj = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Class'), null=False)
 
     def clean(self):

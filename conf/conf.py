@@ -1,5 +1,5 @@
 import json
-from datetime import time
+from datetime import time, timedelta
 
 
 def __load() -> dict:
@@ -19,3 +19,8 @@ def start_time() -> time:
 def end_time() -> time:
     data = timings()['end']
     return time(hour=data['hour'], minute=data['minute'], second=0)
+
+
+def max_duration() -> timedelta:
+    data = timings()['max_class_duration']
+    return timedelta(days=0, hours=data['hour'], minutes=data['minute'])

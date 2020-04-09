@@ -12,11 +12,14 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 
+from django.templatetags.static import static
+from django.urls import reverse_lazy
+from django.utils.functional import lazy
+
 from conf.bdd import get_db_info
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -31,6 +34,7 @@ ALLOWED_HOSTS = [
     '*',
 ]
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
@@ -44,10 +48,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'rest_framework',
+    'oauth2_provider',
+    'corsheaders',
+    'drf_yasg',
+
     'cal.apps.CalConfig',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -55,13 +65,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'drf_yasg.middleware.SwaggerExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'enseign.urls'
 
-LOGIN_URL = '/login/'
-LOGOUT_URL = '/logout/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = reverse_lazy('admin:login')
 
 TEMPLATES = [
     {
@@ -81,12 +90,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'enseign.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = get_db_info(BASE_DIR)
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -106,6 +113,67 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+OAUTH2_CLIENT_ID = '12ee6bgxtpSEgP8TioWcHSXOiDBOUrVav4mRbVEs'
+OAUTH2_CLIENT_SECRET = '5FvYALo7W4uNnWE2ySw7Yzpkxh9PSf5GuY37RvOys00ydEyph64dbl1ECOKI9ceQ' \
+                       'AKoz0JpiVQtq0DUnsxNhU3ubrJgZ9YbtiXymbLGJq8L7n4fiER7gXbXaNSbze3BN'
+OAUTH2_APP_NAME = 'Enseign OAuth2 provider'
+
+OAUTH2_REDIRECT_URL = lazy(static, 'enseign/swagger-ui-dist/oauth2-redirect.html')
+OAUTH2_AUTHORIZE_URL = reverse_lazy('oauth2_provider:authorize')
+OAUTH2_TOKEN_URL = reverse_lazy('oauth2_provider:token')
+
+# drf-yasg
+SWAGGER_SETTINGS = {
+    'LOGIN_URL': reverse_lazy('admin:login'),
+    'LOGOUT_URL': '/admin/logout',
+    'PERSIST_AUTH': True,
+    'REFETCH_SCHEMA_WITH_AUTH': True,
+    'REFETCH_SCHEMA_ON_LOGOUT': True,
+
+    'DEFAULT_INFO': 'enseign.urls.swagger_info',
+
+    'SECURITY_DEFINITIONS': {
+        'Basic': {
+            'type': 'basic'
+        },
+        'Bearer': {
+            'in': 'header',
+            'name': 'Authorization',
+            'type': 'apiKey',
+        },
+        'OAuth2 password': {
+            'flow': 'password',
+            'scopes': {
+                'read': 'Read everything.',
+                'write': 'Write everything,',
+            },
+            'tokenUrl': OAUTH2_TOKEN_URL,
+            'type': 'oauth2',
+        },
+        'Query': {
+            'in': 'query',
+            'name': 'auth',
+            'type': 'apiKey',
+        },
+    },
+    'OAUTH2_REDIRECT_URL': OAUTH2_REDIRECT_URL,
+    'OAUTH2_CONFIG': {
+        'clientId': OAUTH2_CLIENT_ID,
+        'clientSecret': OAUTH2_CLIENT_SECRET,
+        'appName': OAUTH2_APP_NAME,
+    },
+    "DEFAULT_PAGINATOR_INSPECTORS": [
+        'cal.inspectors.UnknownPaginatorInspector',
+        'drf_yasg.inspectors.DjangoRestResponsePagination',
+        'drf_yasg.inspectors.CoreAPICompatInspector',
+    ]
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -119,7 +187,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
