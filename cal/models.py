@@ -152,30 +152,42 @@ class Occupancy(Model):
 
 
 def occupancy_overlap_validator_for(o, model):
-    obj = _('Cet intervenant') if model == TeacherOccupancy else _('Cette classe')
-
     occupancy_start = datetime.combine(o.occupancy.date, o.occupancy.start_time)
     occupancy_end = occupancy_start + o.occupancy.duration
+
+    def __overlap_validation_error(overlap_start, overlap_end):
+        if model == TeacherOccupancy:
+            error_message = _(f'Cet intervenant est déjà occupé '
+                              f'de {overlap_start.strftime("%H:%M")} '
+                              f'à {overlap_end.strftime("%H:%M")}')
+        else:
+            error_message = _(
+                f'Cette classe est déjà occupée '
+                f'de {overlap_start.strftime("%H:%M")} '
+                f'à {overlap_end.strftime("%H:%M")}')
+        raise ValidationError(error_message)
+
     for teacher_occupancy in model.objects.all().filter(obj=o.obj, occupancy__date=o.occupancy.date):
         occupancy_object = teacher_occupancy.occupancy
         occupancy_object_start = datetime.combine(occupancy_object.date, occupancy_object.start_time)
         occupancy_object_end = occupancy_object_start + occupancy_object.duration
-        if occupancy_object_start < occupancy_start < occupancy_object_end or \
-                occupancy_start < occupancy_object_start < occupancy_end:
-            raise ValidationError(_(
-                f'{obj} est déjà occupé de '
-                f'{occupancy_object_start.strftime("%H:%M")} à {occupancy_object_end.strftime("%H:%M")}'))
+
+        if occupancy_object_start < occupancy_start < occupancy_object_end:
+            __overlap_validation_error(occupancy_object_start, occupancy_object_end)
+        if occupancy_start < occupancy_object_start < occupancy_end:
+            __overlap_validation_error(occupancy_start, occupancy_end)
 
 
 class TeacherOccupancy(Model):
     occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupation'), null=False)
     obj = ForeignKey(Teacher, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False)
 
-    def __validate_fields(self):
+    def clean(self):
         occupancy_overlap_validator_for(self, TeacherOccupancy)
+        super(TeacherOccupancy, self).clean()
 
     def save(self, *args, **kwargs):
-        self.__validate_fields()
+        self.clean()
         super(TeacherOccupancy, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -191,11 +203,12 @@ class ClassOccupancy(Model):
     occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupancy'), null=False)
     obj = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Class'), null=False)
 
-    def __validate_fields(self):
+    def clean(self):
         occupancy_overlap_validator_for(self, ClassOccupancy)
+        super(ClassOccupancy, self).clean()
 
     def save(self, *args, **kwargs):
-        self.__validate_fields()
+        self.clean()
         super(ClassOccupancy, self).save(*args, **kwargs)
 
     def __str__(self):
