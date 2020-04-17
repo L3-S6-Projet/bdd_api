@@ -1,16 +1,26 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext as _
 
-from .models import Teacher, Student, Class, Occupancy, ClassOccupancy, TeacherOccupancy, Rooms, Subject
-
-
-@admin.register(Teacher)
-class TeacherAdmin(admin.ModelAdmin):
-    pass
+from .models import Class, Occupancy, ClassOccupancy, TeacherOccupancy, Rooms, Subject, CalUser
 
 
-@admin.register(Student)
-class StudentAdmin(admin.ModelAdmin):
-    pass
+@admin.register(CalUser)
+class CalUserAdmin(UserAdmin):
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'type')}),
+        (_('Permissions'), {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'type'),
+        }),
+    )
 
 
 @admin.register(Class)
@@ -21,7 +31,7 @@ class ClassAdmin(admin.ModelAdmin):
     ]
 
     fieldsets = [
-        (None, {'fields': ['year', 'name', ], })
+        (None, {'fields': ['year', 'name', 'student', ], })
     ]
 
 

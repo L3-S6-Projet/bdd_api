@@ -53,7 +53,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
 
+    'users.apps.UsersConfig',
+
     'cal.apps.CalConfig',
+    'ical.apps.IcalConfig',
 ]
 
 MIDDLEWARE = [
@@ -97,6 +100,8 @@ DATABASES = get_db_info(BASE_DIR)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
+
+AUTH_USER_MODEL = 'users.CustomUser'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
