@@ -1,7 +1,8 @@
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
-from cal.models import CalUser, Class, Rooms, Subject, Occupancy, TeacherOccupancy, ClassOccupancy, years
+from cal.models import Class, Rooms, Subject, Occupancy, TeacherOccupancy, ClassOccupancy, years
+from users.models import UserInfo
 
 
 class ClassSerializer(serializers.ModelSerializer):
@@ -64,17 +65,18 @@ class SubjectSerializer(serializers.ModelSerializer):
         ]
 
 
-class CalUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CalUser
+        model = UserInfo
         fields = [
-            'first_name',
-            'last_name',
+            'user.first_name',
+            'user.last_name',
+            'type',
         ]
 
 
 class CalUserOccupancySerializer(serializers.ModelSerializer):
-    obj = CalUserSerializer(many=False, read_only=True)
+    obj = UserSerializer(many=False, read_only=True)
 
     def create(self, validated_data):
         return Occupancy.objects.create(**validated_data)

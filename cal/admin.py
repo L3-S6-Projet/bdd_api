@@ -1,26 +1,12 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from django.utils.translation import gettext as _
 
-from .models import Class, Occupancy, ClassOccupancy, TeacherOccupancy, Rooms, Subject, CalUser
+from .models import Class, Occupancy, ClassOccupancy, TeacherOccupancy, Rooms, Subject, ClassStudent
 
 
-@admin.register(CalUser)
-class CalUserAdmin(UserAdmin):
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'type')}),
-        (_('Permissions'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
-        }),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
-    )
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'type'),
-        }),
-    )
+class StudentInline(admin.TabularInline):
+    model = ClassStudent
+    extra = 1
+    can_delete = True
 
 
 @admin.register(Class)
@@ -31,7 +17,11 @@ class ClassAdmin(admin.ModelAdmin):
     ]
 
     fieldsets = [
-        (None, {'fields': ['year', 'name', 'student', ], })
+        (None, {'fields': ['year', 'name', ], })
+    ]
+
+    inlines = [
+        StudentInline,
     ]
 
 

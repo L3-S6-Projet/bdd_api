@@ -1,9 +1,11 @@
 from datetime import time, timedelta
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 from conf import conf
+from users.models import UserInfo
 
 
 def start_time_validator(time_to_validate: time):
@@ -23,10 +25,12 @@ def max_duration_validation(duration_to_validate: timedelta):
 
 
 def teacher_validator(person):
-    if person.type != 'INT':
+    if UserInfo.objects.filter(user=User.objects.filter(id=person)[0])[0].type != 'INT':
         raise ValidationError(_('Veuillez choisir un intervenant et pas un élève'))
 
 
 def student_validator(person):
-    if person.type != 'STU':
+    if person is None:
+        return
+    if UserInfo.objects.filter(user=User.objects.filter(id=person)[0])[0].type != 'STU':
         raise ValidationError(_('Veuillez choisir un élève et pas un intervenant'))

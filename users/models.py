@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils.translation import gettext as _
 
 person_types = [
+    ('ADM', _('Administration')),
     ('INT', _('Intervenant')),
     ('STU', _('Étudiant')),
 ]
