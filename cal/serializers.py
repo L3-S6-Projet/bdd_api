@@ -1,12 +1,11 @@
-from rest_framework import serializers
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
-from cal.models import Teacher, Class, Rooms, Subject, Occupancy, TeacherOccupancy, ClassOccupancy, year
+from cal.models import CalUser, Class, Rooms, Subject, Occupancy, TeacherOccupancy, ClassOccupancy, years
 
 
 class ClassSerializer(serializers.ModelSerializer):
-    year = serializers.ChoiceField(choices=year, default=_('L1'), help_text=_('Année en cours'))
+    year = serializers.ChoiceField(choices=years, default=_('L1'), help_text=_('Année en cours'))
 
     def create(self, validated_data):
         validated_data['name'] = validated_data['name'].title()
@@ -14,7 +13,7 @@ class ClassSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
+        instance.years = validated_data.get('year', instance.years)
         instance.save()
         return instance
 
@@ -65,18 +64,17 @@ class SubjectSerializer(serializers.ModelSerializer):
         ]
 
 
-class TeacherSerializer(serializers.ModelSerializer):
+class CalUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Teacher
+        model = CalUser
         fields = [
             'first_name',
             'last_name',
-            'grade',
         ]
 
 
-class TeacherOccupancySerializer(serializers.ModelSerializer):
-    obj = TeacherSerializer(many=False, read_only=True)
+class CalUserOccupancySerializer(serializers.ModelSerializer):
+    obj = CalUserSerializer(many=False, read_only=True)
 
     def create(self, validated_data):
         return Occupancy.objects.create(**validated_data)
@@ -114,7 +112,7 @@ class ClassOccupancySerializer(serializers.ModelSerializer):
 
 
 class OccupancySerializer(serializers.ModelSerializer):
-    teachers = TeacherOccupancySerializer(many=True)
+    teachers = CalUserOccupancySerializer(many=True)
     classes = ClassOccupancySerializer(many=True)
 
     def create(self, validated_data):
@@ -133,7 +131,7 @@ class OccupancySerializer(serializers.ModelSerializer):
         instance.start_time = validated_data.get('start_time', instance.start_time)
         instance.duration = validated_data.get('duration', instance.duration)
         instance.subject = validated_data.get('subject', instance.subject)
-        instance.session_type = validated_data.get('session_type', instance.session_type)
+        instance.session_types = validated_data.get('session_type', instance.session_types)
 
         instance.save()
 

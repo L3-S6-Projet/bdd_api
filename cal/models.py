@@ -3,13 +3,14 @@ from datetime import date, timedelta, datetime
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db.models import Model, CharField, IntegerField, ForeignKey, DateField, TimeField, DurationField, CASCADE
+from django.db.models import Model, CharField, IntegerField, ForeignKey, ManyToManyField, DateField, \
+    TimeField, DurationField, CASCADE
 from django.utils.translation import gettext as _
 
 from conf import conf
 from .validators import start_time_validator, max_duration_validation
 
-year = [
+years = [
     ('L1', _('L1')),
     ('L2', _('L2')),
     ('L3', _('L3')),
@@ -26,24 +27,36 @@ grades = [
     ('MONI', _('Moniteur')),
 ]
 
-session_type = [
+session_types = [
     ('CM', _('CM')),
     ('TD', _('TD')),
     ('TP', _('TP')),
 ]
 
+person_types = [
+    ('INT', _('Intervenant')),
+    ('STU', _('Étudiant')),
+]
 
-class Teacher(User):
-    grade = CharField(max_length=4, verbose_name=_('Grade'), choices=grades, null=False)
 
-    class Meta:
-        verbose_name = _('Interevenant')
-        verbose_name_plural = _('Intervenants')
+class CalUser(User):
+    type = CharField(max_length=3, verbose_name=_('Type'), choices=person_types, null=False)
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
+
+    def __repr__(self):
+        return f'{self.first_name} {self.last_name}'
+
+    class Meta(User.Meta):
+        verbose_name = _('Person')
+        verbose_name_plural = _('Persons')
 
 
 class Class(Model):
     name = CharField(max_length=255, verbose_name=_('Nom'), null=False)
-    year = CharField(max_length=2, verbose_name=_('Année'), choices=year, null=False)
+    year = CharField(max_length=2, verbose_name=_('Année'), choices=years, null=False)
+    student = ManyToManyField(to=CalUser, limit_choices_to={'type': 'STU'})
 
     def save(self, *args, **kwargs):
         super(Class, self).save(*args, **kwargs)
@@ -60,12 +73,14 @@ class Class(Model):
         unique_together = [('name', 'year',), ]
 
 
-class Student(User):
-    _class = ForeignKey(Class, on_delete=CASCADE, verbose_name=_('Classe'), null=False)
+class StudentClass(Model):
+    _class = ForeignKey(Class, verbose_name=_('Classe'), on_delete=CASCADE)
+    student = ForeignKey(CalUser, verbose_name=_('Étudiant'), on_delete=CASCADE, limit_choices_to={'type': 'STU'})
 
     class Meta:
-        verbose_name = _('Étudiants')
-        verbose_name_plural = _('Étudiants')
+        verbose_name = _('Etudiant de la classe')
+        verbose_name_plural = _('Étudiants de la classe')
+        unique_together = [('_class', 'student',), ]
 
 
 class Rooms(Model):
@@ -110,9 +125,9 @@ class Occupancy(Model):
     duration = DurationField(verbose_name=_('Durée'), null=False, validators=[max_duration_validation],
                              default=timedelta(days=0, hours=1, minutes=0, seconds=0))
     subject = ForeignKey(Subject, on_delete=CASCADE, verbose_name=_('Matière'), null=False)
-    session_type = CharField(max_length=2, verbose_name=_('Type'), null=False, choices=session_type)
+    session_type = CharField(max_length=2, verbose_name=_('Type'), null=False, choices=session_types)
 
-    def __validate_fields(self):
+    def clean(self):
         if datetime.combine(self.date, conf.end_time()) < datetime.combine(self.date, self.start_time) + self.duration:
             raise ValidationError(_(f'L\'établissement ferme à {conf.end_time().strftime("%H:%M")}'))
 
@@ -135,9 +150,10 @@ class Occupancy(Model):
                 raise ValidationError(_(
                     f'Cet salle est déjà prise de '
                     f'{occupancy_start.strftime("%H:%M")} à {occupancy_end.strftime("%H:%MM")}'))
+        super(Occupancy, self).clean()
 
     def save(self, *args, **kwargs):
-        self.__validate_fields()
+        self.clean()
         super(Occupancy, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -182,7 +198,8 @@ def occupancy_overlap_validator_for(o, model):
 class TeacherOccupancy(Model):
     occupancy = ForeignKey(Occupancy, on_delete=CASCADE, verbose_name=_('Occupation'), related_name='teachers',
                            null=False)
-    obj = ForeignKey(Teacher, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False)
+    obj = ForeignKey(CalUser, on_delete=CASCADE, verbose_name=_('Intervenant'), null=False,
+                     limit_choices_to={'type': 'INT'})
 
     def clean(self):
         occupancy_overlap_validator_for(self, TeacherOccupancy)

@@ -20,3 +20,13 @@ def max_duration_validation(duration_to_validate: timedelta):
     minute = str(m) if len(str(m)) == 2 else f'0{m}'
     if conf.max_duration() < duration_to_validate:
         raise ValidationError(_(f'La durée d\'une séance ne peut dépasser {hour}:{minute}'))
+
+
+def teacher_validator(person):
+    if person.type != 'INT':
+        raise ValidationError(_('Veuillez choisir un intervenant et pas un élève'))
+
+
+def student_validator(person):
+    if person.type != 'STU':
+        raise ValidationError(_('Veuillez choisir un élève et pas un intervenant'))

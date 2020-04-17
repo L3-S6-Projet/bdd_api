@@ -9,7 +9,7 @@ from rest_framework.parsers import FileUploadParser, FormParser
 
 from cal.models import Class, Rooms, Subject, Occupancy, TeacherOccupancy, ClassOccupancy
 from cal.serializers import ClassSerializer, RoomSerializer, SubjectSerializer, OccupancySerializer, \
-    ClassOccupancySerializer, TeacherOccupancySerializer
+    ClassOccupancySerializer, CalUserOccupancySerializer
 
 
 class CamelCaseOperationIDAutoSchema(SwaggerAutoSchema):
@@ -156,7 +156,7 @@ class OccupancyList(generics.ListCreateAPIView):
 
 class TeacherOccupancyList(generics.ListCreateAPIView):
     queryset = TeacherOccupancy.objects.all()
-    serializer_class = TeacherOccupancySerializer
+    serializer_class = CalUserOccupancySerializer
 
     parser_classes = (FormParser, CamelCaseJSONParser, FileUploadParser)
     renderer_classes = (CamelCaseJSONRenderer,)
