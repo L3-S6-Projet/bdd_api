@@ -17,7 +17,7 @@ def get_db_info(BASE_DIR: str) -> dict:
             },
         }
     if system() == 'Linux':
-        sp = subprocess.Popen('./check_mysql.sh', stdout=subprocess.PIPE)
+        sp = subprocess.Popen('./conf/check_mysql.sh', stdout=subprocess.PIPE)
         if sp.returncode == 0:
             return {
                 'default': {
