@@ -24,3 +24,7 @@ def end_time() -> time:
 def max_duration() -> timedelta:
     data = timings()['max_class_duration']
     return timedelta(days=0, hours=data['hour'], minutes=data['minute'])
+
+
+def get_service_coefficients() -> dict:
+    return __load()['service_coefficients']

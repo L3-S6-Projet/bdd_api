@@ -12,5 +12,10 @@
       "hour": 4,
       "minute": 0
     }
+  },
+  "service_coefficients": {
+    "cm": 1,
+    "td": 1.5,
+    "tp": 2
   }
 }

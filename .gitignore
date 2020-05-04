@@ -344,10 +344,8 @@ StyleCopReport.xml
 *.tlb
 *.tli
 *.tlh
-*.tmp
 *.tmp_proj
 *_wpftmp.csproj
-*.log
 *.vspscc
 *.vssscc
 .builds
@@ -484,7 +482,6 @@ _pkginfo.txt
 # Others
 ClientBin/
 ~$*
-*~
 *.dbmdl
 *.dbproj.schemaview
 *.jfm
@@ -565,7 +562,6 @@ paket-files/
 .cr/personal
 
 # Python Tools for Visual Studio (PTVS)
-__pycache__/
 *.pyc
 
 # Cake - Uncomment if you are using it
@@ -613,7 +609,6 @@ MigrationBackup/
 
 ### Emacs template
 # -*- mode: gitignore; -*-
-*~
 \#*\#
 /.emacs.desktop
 /.emacs.desktop.lock
@@ -644,7 +639,6 @@ tramp
 
 # cask packages
 .cask/
-dist/
 
 # Flycheck
 flycheck_*.el
@@ -685,7 +679,6 @@ Sessionx.vim
 
 # Temporary
 .netrwhist
-*~
 # Auto-generated tag files
 tags
 # Persistent undo
@@ -694,7 +687,6 @@ tags
 ### VirtualEnv template
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
-.Python
 [Bb]in
 [Ii]nclude
 [Ll]ib
@@ -702,7 +694,6 @@ tags
 [Ll]ocal
 [Ss]cripts
 pyvenv.cfg
-.venv
 pip-selfcheck.json
 
 ### Windows template
@@ -735,8 +726,6 @@ $RECYCLE.BIN/
 .metadata
 bin/
 tmp/
-*.tmp
-*.bak
 *.swp
 *~.nib
 local.properties

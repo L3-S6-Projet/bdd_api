@@ -16,6 +16,7 @@ from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.functional import lazy
 
+from conf.auth import MIN_PASSWORD_LENGTH
 from conf.bdd import get_db_info
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -49,14 +50,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'oauth2_provider',
     'corsheaders',
     'drf_yasg',
 
-    'users.apps.UsersConfig',
-
-    'cal.apps.CalConfig',
-    'ical.apps.IcalConfig',
+    'scolendar.apps.ScolendarConfig',
 ]
 
 MIDDLEWARE = [
@@ -107,6 +106,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': MIN_PASSWORD_LENGTH,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -117,9 +119,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    )
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
 }
 
 OAUTH2_CLIENT_ID = '12ee6bgxtpSEgP8TioWcHSXOiDBOUrVav4mRbVEs'
@@ -142,26 +144,9 @@ SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'enseign.urls.swagger_info',
 
     'SECURITY_DEFINITIONS': {
-        'Basic': {
-            'type': 'basic'
-        },
         'Bearer': {
             'in': 'header',
             'name': 'Authorization',
-            'type': 'apiKey',
-        },
-        'OAuth2 password': {
-            'flow': 'password',
-            'scopes': {
-                'read': 'Read everything.',
-                'write': 'Write everything,',
-            },
-            'tokenUrl': OAUTH2_TOKEN_URL,
-            'type': 'oauth2',
-        },
-        'Query': {
-            'in': 'query',
-            'name': 'auth',
             'type': 'apiKey',
         },
     },
@@ -171,11 +156,12 @@ SWAGGER_SETTINGS = {
         'clientSecret': OAUTH2_CLIENT_SECRET,
         'appName': OAUTH2_APP_NAME,
     },
-    "DEFAULT_PAGINATOR_INSPECTORS": [
-        'cal.inspectors.UnknownPaginatorInspector',
+    'DEFAULT_PAGINATOR_INSPECTORS': [
+        'scolendar.inspectors.UnknownPaginatorInspector',
         'drf_yasg.inspectors.DjangoRestResponsePagination',
         'drf_yasg.inspectors.CoreAPICompatInspector',
-    ]
+    ],
+    'TAGS_SORTER': None,
 }
 
 # Internationalization
