@@ -2,11 +2,11 @@ FROM python:3.7
 
 ENV PYTHONUNBUFFERED 1
 
-RUN mkdir /scolendar_api
+RUN mkdir /scolendar
 
-WORKDIR /scolendar_api
+WORKDIR /scolendar
 
-ADD . /scolendar_api/
+ADD . /scolendar/
 
 RUN pip install -r requirements.txt
 

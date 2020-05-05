@@ -6,6 +6,6 @@ services:
     command: bash -c "python manage.py runserver 0:8000"
     container_name: scolendar_api
     volumes:
-      - .:/scolendar_api
+      - .:/scolendar
     ports:
       - "8000:8000"
