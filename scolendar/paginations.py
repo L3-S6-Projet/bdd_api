@@ -16,7 +16,15 @@ class ClassResultSetPagination(PageNumberPagination):
     max_page_size = 1000
 
 
+class SubjectResultSetPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 1000
+
+
 class PaginationHandlerMixin(object):
+    request = None
+    pagination_class = None
+
     @property
     def paginator(self):
         if not hasattr(self, '_paginator'):

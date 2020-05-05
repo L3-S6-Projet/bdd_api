@@ -8,7 +8,7 @@ from pytz import timezone
 from rest_framework import serializers
 
 from conf.auth import MIN_PASSWORD_LENGTH
-from scolendar.models import Student, Class, Teacher, Classroom
+from scolendar.models import Student, Class, Teacher, Classroom, Occupancy, Subject, SubjectTeacher
 
 try:
     import typing  # noqa: F401
@@ -199,3 +199,99 @@ class StudentSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'class_name': {'required': False, 'allow_null': True},
         }
+
+
+######################################################
+#                                                    #
+#                       Subject                      #
+#                                                    #
+######################################################
+
+class SubjectCreationSerializer(serializers.ModelSerializer):
+    class_id = serializers.IntegerField()
+    teacher_in_charge_id = serializers.IntegerField()
+
+    def save(self, **kwargs):
+        _class = Class.objects.get(id=self.validated_data['class_id'])
+        teacher_in_charge = Teacher.objects.get(id=self.validated_data['teacher_in_charge_id'])
+
+        subject = Subject(_class=_class, name=self.validated_data['name'])
+        subject.save()
+
+        try:
+            subject_teacher = SubjectTeacher.objects.get(teacher=teacher_in_charge, subject=subject)
+        except SubjectTeacher.DoesNotExist:
+            subject_teacher = SubjectTeacher(teacher=teacher_in_charge, subject=subject)
+
+        subject_teacher.in_charge = True
+        subject_teacher.save()
+
+        return subject
+
+    class Meta:
+        model = Subject
+        fields = [
+            'name',
+            'class_id',
+            'teacher_in_charge_id',
+        ]
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = [
+            '_class',
+            'name',
+        ]
+
+
+########################################################
+#                                                      #
+#                      Occupancy                       #
+#                                                      #
+########################################################
+
+
+class OccupancyCreationSerializer(serializers.ModelSerializer):
+    def save(self, subject_id, **kwargs):
+        classroom = Classroom.objects.get(id=self.validated_data['classroom_id'])
+        subject = Subject.objects.get(id=subject_id)
+        start_datetime = datetime.fromtimestamp(self.validated_data['start'])
+        end_datetime = datetime.fromtimestamp(self.validated_data['end'])
+        occupancy = Occupancy(
+            classroom=classroom,
+            subject=subject,
+            start_datetime=start_datetime,
+            duration=end_datetime - start_datetime,
+            name=self.validated_data['name'],
+            occupancy_type=self.validated_data['occupancy_type']
+        )
+        occupancy.save()
+        return occupancy
+
+    class Meta:
+        model = Occupancy
+        fields = [
+            'classroom_id',
+            'subject_id',
+            'teacher',
+            'start_date',
+            'duration',
+            'occupancy_type',
+        ]
+
+
+class OccupancySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Occupancy
+        fields = [
+            'id',
+            'classroom',
+            'group',
+            'subject',
+            'teacher',
+            'start_date',
+            'duration',
+            'occupancy_type',
+        ]

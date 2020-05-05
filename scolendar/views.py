@@ -13,11 +13,14 @@ from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from conf.conf import get_service_coefficients
-from scolendar.models import Student, Teacher, ranks, occupancy_list, Classroom, levels, Class
+from scolendar.exceptions import TeacherInChargeError
+from scolendar.models import Student, Teacher, ranks, occupancy_list, Classroom, levels, Class, Occupancy, Subject, \
+    SubjectTeacher
 from scolendar.paginations import PaginationHandlerMixin, StudentResultSetPagination, ClassroomResultSetPagination, \
-    ClassResultSetPagination
+    ClassResultSetPagination, SubjectResultSetPagination
 from scolendar.serializers import TeacherCreationSerializer, TeacherSerializer, ClassroomCreationSerializer, \
-    ClassroomSerializer, StudentCreationSerializer, StudentSerializer, ClassSerializer, ClassCreationSerializer
+    ClassroomSerializer, StudentCreationSerializer, StudentSerializer, ClassSerializer, ClassCreationSerializer, \
+    OccupancySerializer, OccupancyCreationSerializer, SubjectSerializer, SubjectCreationSerializer
 from scolendar.validators import phone_number_validator
 
 error_codes = [
@@ -34,7 +37,7 @@ error_codes = [
     'TeacherInCharge'
 ]
 
-teacher_student_post_response = {
+delete_response = {
     200: Response(
         description='Data deleted',
         schema=Schema(
@@ -512,7 +515,7 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
         operation_summary='Deletes the given students using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
                               'This request should trigger the re-organization of students in the affected groups.',
-        responses=teacher_student_post_response,
+        responses=delete_response,
         tags=['Teachers'],
         request_body=Schema(
             title='IDRequest',
@@ -1249,7 +1252,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
         operation_summary='Deletes the given classrooms using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
                               'This request should be denied if the classroom is used in any occupancy.',
-        responses=teacher_student_post_response,
+        responses=delete_response,
         tags=['Classrooms'],
         request_body=Schema(
             title='IDRequest',
@@ -2165,7 +2168,7 @@ class StudentViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
         operation_summary='Deletes the given students using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
                               'This request should trigger the re-organization of students in the affected groups.',
-        responses=teacher_student_post_response,
+        responses=delete_response,
         tags=['Students'],
         request_body=Schema(
             title='IDRequest',
@@ -2523,7 +2526,12 @@ class StudentOccupancyDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
         },
-        tags=['Students', 'role-student', ]
+        tags=['Students', 'role-student', ],
+        manual_parameters=[
+            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+        ],
     )
     def get(self, request, teacher_id):
         try:
@@ -2665,6 +2673,1573 @@ class StudentSubjectDetailViewSet(APIView, TokenHandlerMixin):
                 }
                 return RF_Response(response)
             except Student.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+######################################################
+#                                                    #
+#                       Subject                      #
+#                                                    #
+######################################################
+
+
+class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
+    pagination_class = SubjectResultSetPagination
+
+    @swagger_auto_schema(
+        operation_summary='Returns a paginated list of all subjects.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
+                              '10 subjects should be returned per page. At least three characters should be provided '
+                              'for the search.',
+        responses={
+            200: Response(
+                description='A list of all subjects.',
+                schema=Schema(
+                    title='SubjectListResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'total': Schema(
+                            type=TYPE_INTEGER,
+                            description='Total number of subjects',
+                            example=166
+                        ),
+                        'subjects': Schema(
+                            type=TYPE_ARRAY,
+                            items=Schema(
+                                type=TYPE_OBJECT,
+                                properties={
+                                    'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                    'name': Schema(type=TYPE_STRING, example='PPPE'),
+                                },
+                                required=['class_name', 'name', ]
+                            ),
+                        ),
+                    },
+                    required=['status', 'total', 'subjects', ]
+                )
+            ),
+            401: Response(
+                description='Unauthorized access',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, value='error'),
+                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', ],
+        manual_parameters=[
+            Parameter(name='query', in_=IN_QUERY, type=TYPE_STRING, required=False),
+        ],
+    )
+    def get(self, request, *args, **kwargs):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            queryset = Subject.objects.all()
+            serializer = SubjectSerializer(queryset, many=True)
+            data = {
+                'status': 'success',
+                'total': len(serializer.data),
+                'students': serializer.data,
+            }
+            return RF_Response(data)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Creates a new subject.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses={
+            201: Response(
+                description='Subject created',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                    },
+                    required=['status', 'username', 'password', ]
+                )
+            ),
+            401: Response(
+                description='Unauthorized access',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InvalidCredentials',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InvalidCredentials',
+                            enum=error_codes),
+                    }, required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    }
+                )
+            ),
+            422: Response(
+                description='Invalid email (code=`InvalidEmail`)\nInvalid phone number (code=`InvalidPhoneNumber`)\n'
+                            'Invalid rank (code=`InvalidRank`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    }, required=['status', 'code', ]
+                )
+            ),
+
+        },
+        tags=['Subjects', ],
+        request_body=Schema(
+            title='SubjectCreationRequest',
+            type=TYPE_OBJECT,
+            properties={
+                'name': Schema(type=TYPE_STRING, example='PPPE'),
+                'class_id': Schema(type=TYPE_INTEGER, example=166),
+                'teacher_in_charge_id': Schema(type=TYPE_INTEGER, example=166),
+            },
+            required=['name', 'class_id', 'teacher_in_charge_id', ]
+        )
+    )
+    def post(self, request, *args, **kwargs):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                serializer = SubjectCreationSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            except Teacher.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            except Class.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            return RF_Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Deletes the given students using their IDs.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
+                              'This request should trigger the re-organization of students in the affected groups.',
+        responses=delete_response,
+        tags=['Subjects', ],
+        request_body=Schema(
+            title='IDRequest',
+            type=TYPE_ARRAY,
+            items=Schema(
+                type=TYPE_INTEGER,
+                example=166
+            )
+        ),
+    )
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+
+            def delete_subject(student_id: int):
+                subject = Subject.objects.get(id=student_id)
+                subject.delete()
+
+            for post_id in request.data:
+                try:
+                    delete_subject(post_id)
+                except Subject.DoesNotExist:
+                    return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            return RF_Response({'status': 'success'})
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SubjectDetailViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Gets information on a subject.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses={
+            200: Response(
+                description='Subject information',
+                schema=Schema(
+                    title='SubjectResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'subject': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                'name': Schema(type=TYPE_STRING, example='PPPE'),
+                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUEE'),
+                                'total_hours': Schema(type=TYPE_INTEGER, example=166),
+                                'teachers': Schema(
+                                    type=TYPE_ARRAY,
+                                    items=Schema(
+                                        type=TYPE_OBJECT,
+                                        properties={
+                                            'id': Schema(type=TYPE_INTEGER, example=166),
+                                            'first_name': Schema(type=TYPE_STRING, example='John'),
+                                            'last_name': Schema(type=TYPE_STRING, example='Doe'),
+                                            'in_charge': Schema(type=TYPE_BOOLEAN, example=False),
+                                        },
+                                        required=['id', 'first_name', 'last_name', 'in_charge', ]
+                                    )
+                                ),
+                                'groups': Schema(
+                                    type=TYPE_OBJECT,
+                                    properties={
+                                        'id': Schema(type=TYPE_INTEGER, example=166),
+                                        'name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                        'count': Schema(type=TYPE_INTEGER, example=166),
+                                    },
+                                    required=['id', 'name', 'count', ]
+                                ),
+                            },
+                            required=[
+                                'name',
+                                'class_name',
+                                'total_hours',
+                                'teachers',
+                                'groups',
+                            ]
+                        ),
+                    },
+                    required=['status', 'subject', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', ]
+    )
+    def get(self, request, subject_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                subject = Student.objects.get(id=subject_id)
+
+                def get_teachers() -> list:
+                    teachers = []
+                    # TODO so much shit...
+                    return teachers
+
+                def get_groups() -> list:
+                    groups = []
+                    # TODO too much shit...
+                    return groups
+
+                def count_hours() -> int:
+                    total = 0
+                    # TODO well...
+                    return total
+
+                subject = {
+                    'name': subject.name,
+                    'class_name': subject._class.name,
+                    'total_hours': count_hours(),
+                    'teachers': get_teachers(),
+                    'groups': get_groups()
+                }
+                return RF_Response({'status': 'success', 'subject': subject})
+            except Student.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Updates information for a subject.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route. '
+                              'The teacher designed by teacher_in_charge_id should already be a teacher of that '
+                              'subject.',
+        responses={
+            200: Response(
+                description='Subject updated',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success')
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    }, required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', ],
+        request_body=Schema(
+            title='SubjectUpdateRequest',
+            type=TYPE_OBJECT,
+            properties={
+                'name': Schema(type=TYPE_STRING, example='PPPE'),
+                'class_id': Schema(type=TYPE_INTEGER, example=166),
+                'teacher_in_charge_id': Schema(type=TYPE_INTEGER, example=166),
+            },
+            required=['name', 'class_id', 'teacher_in_charge_id', ]
+        )
+    )
+    def put(self, request, student_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                subject = Subject.objects.get(id=student_id)
+                data = request.data
+                data_keys = data.keys()
+                if 'name' in data_keys:
+                    subject.name = data['first_name']
+                if 'class_id' in data_keys:
+                    try:
+                        _class = Class.objects.get(id=data['class_id'])
+                        subject._class = _class
+                    except Class.DoesNotExist:
+                        return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+                if 'teacher_in_charge_id' in data_keys:
+                    try:
+                        new_teacher_in_charge = Teacher.objects.get(id=data['teacher_in_charge_id'])
+                        try:
+                            subject_teacher = SubjectTeacher.objects.get(subject_id=subject.id, in_charge=True)
+                            subject_teacher.in_charge = False
+                        except SubjectTeacher.DoesNotExist:
+                            pass
+                        try:
+                            subject_teacher = SubjectTeacher.objects.get(teacher=new_teacher_in_charge, subject=subject)
+                        except SubjectTeacher.DoesNotExist:
+                            subject_teacher = SubjectTeacher(teacher=new_teacher_in_charge, subject=subject)
+                        subject_teacher.in_charge = True
+                        subject_teacher.save()
+                    except Teacher.DoesNotExist:
+                        return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+                subject.save()
+                return RF_Response({'status': 'success'})
+            except Student.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Gets the occupancies of a subject for the given time period.',
+        operation_description='Note : only users with the role `administrator`, or professors who are a teacher of the'
+                              ' subject should be able to access this route.',
+        responses={
+            200: Response(
+                description='Subject occupancies',
+                schema=Schema(
+                    title='SubjectOccupancies',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'occupancies': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                '05-01-2020': Schema(
+                                    type=TYPE_OBJECT,
+                                    properties={
+                                        'id': Schema(type=TYPE_INTEGER, example=166),
+                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
+                                    },
+                                    required=[
+                                        'id',
+                                        'group_name',
+                                        'subject_name',
+                                        'teacher_name',
+                                        'start',
+                                        'end',
+                                        'occupancy_type',
+                                        'name',
+                                    ]
+                                )
+                            },
+                            required=[
+                                'status',
+                                'occupancies',
+                            ]
+                        ),
+                    },
+                    required=['status', 'occupancies', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', 'role-professor', ],
+        manual_parameters=[
+            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+        ],
+    )
+    def get(self, request, subject_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                student = Subject.objects.get(id=subject_id)
+
+                def get_occupancies() -> dict:
+                    occupancies = {}
+                    # TODO crawling under so much shit
+                    return occupancies
+
+                response = {
+                    'status': 'success',
+                    'occupancies': get_occupancies(),
+                }
+                return RF_Response(response)
+            except Student.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Creates a new occupancy for a given subject.',
+        operation_description='Note : only professors who are a teacher of the subject should be able to access this'
+                              ' route.\nThe occupancy types `td` and `tp` should be rejected. Only classrooms that are'
+                              ' free should be accepted. Only classes that are not (any of their groups too) in any'
+                              ' classes at the specified time should be accepted.',
+        responses={
+            200: Response(
+                description='Data saved',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    }
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    }
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    }
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    }
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    }
+                )
+            ),
+        },
+        tags=['role-professor', ],
+        request_body=Schema(
+            title='OccupancyCreationRequest',
+            type=TYPE_OBJECT,
+            properties={
+                'classroom_id': Schema(type=TYPE_INTEGER, example=166),
+                'start': Schema(type=TYPE_INTEGER, example=166),
+                'end': Schema(type=TYPE_INTEGER, example=166),
+                'name': Schema(type=TYPE_STRING, example='Algorithmique CM Groupe 1'),
+                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+            },
+            required=['classroom_id', 'start', 'end', 'name', 'occupancy_type', ]
+        )
+    )
+    def post(self, request, subject_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                serializer = OccupancyCreationSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(subject_id)
+            except Classroom.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            except Subject.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            return RF_Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Adds new teachers to a subject using their IDs.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses={
+            200: Response(
+                description='Teachers added',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', ],
+        request_body=Schema(
+            title='IDRequest',
+            type=TYPE_ARRAY,
+            items=Schema(type=TYPE_INTEGER, example=166),
+        )
+    )
+    def post(self, request, subject_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                for post_id in request.data:
+                    subject_teacher = SubjectTeacher(subject=subject, teacher_id=post_id)
+                    subject_teacher.save()
+            except Subject.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            except Teacher.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            return RF_Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Removes teachers from a subject using their IDs.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route. '
+                              'This request should be denied if there is less than one teacher in the subject, or if '
+                              'the teacher is in charge.',
+        responses={
+            200: Response(
+                description='Teachers removed',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects', ],
+        request_body=Schema(
+            title='IDRequest',
+            type=TYPE_ARRAY,
+            items=Schema(type=TYPE_INTEGER, example=166),
+        )
+    )
+    def delete(self, request, subject_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+
+            def remove_teacher_from_subject(teacher_id: int):
+                subject_teachers = SubjectTeacher.objects.filter(subject_id=subject_id)
+                if len(subject_teachers) <= 1:
+                    raise TeacherInChargeError('Not enough teachers')
+
+                subject_teacher = SubjectTeacher.objects.get(teacher_id=teacher_id, subject_id=subject_id)
+                if subject_teacher.in_charge:
+                    raise TeacherInChargeError('Teacher is in charge')
+                subject_teacher.delete()
+
+            for post_id in request.data:
+                try:
+                    remove_teacher_from_subject(post_id)
+                except SubjectTeacher.DoesNotExist:
+                    return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+                except TeacherInChargeError:
+                    return RF_Response({'status': 'error', 'code': 'TeacherInCharge'},
+                                       status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+            return RF_Response({'status': 'success'})
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SubjectGroupViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Adds a new group to a subject.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route. '
+                              'This should trigger the re-organization of groups.',
+        responses={
+            200: Response(
+                description='Groups added',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects']
+    )
+    def post(self, request, subject_id):
+        # TODO Need specs
+        pass
+
+    @swagger_auto_schema(
+        operation_summary='Removes a group from a subject.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route. '
+                              'This should trigger the re-organisation of groups. This request should be denied if '
+                              'there is less than one group in the subject.',
+        responses={
+            200: Response(
+                description='Groups removed',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Subjects']
+    )
+    def delete(self, request, subject_id):
+        # TODO Need specs
+        pass
+
+
+class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Gets the occupancies of a subject for the given time period.',
+        operation_description='Note : only professors who are a teacher of the subject should be able to access this '
+                              'route.',
+        responses={
+            200: Response(
+                description='Groups occupancies',
+                schema=Schema(
+                    title='Occupancies',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'occupancies': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                '05-01-2020': Schema(
+                                    type=TYPE_OBJECT,
+                                    properties={
+                                        'id': Schema(type=TYPE_INTEGER, example=166),
+                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
+                                    },
+                                    required=[
+                                        'id',
+                                        'group_name',
+                                        'subject_name',
+                                        'teacher_name',
+                                        'start',
+                                        'end',
+                                        'occupancy_type',
+                                        'name',
+                                    ]
+                                )
+                            },
+                            required=[
+                                'status',
+                                'occupancies',
+                            ]
+                        ),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['role-professor', ],
+        manual_parameters=[
+            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+        ],
+    )
+    def get(self, request, subject_id, group_id):
+        # TODO
+        pass
+
+    @swagger_auto_schema(
+        operation_summary='Creates a new occupancy for a given group of a subject.',
+        operation_description='Note : only professors who are a teacher of the subject should be able to access this '
+                              'route.\nThe only accepted occupancy types should be `td` and `tp`.\nThe classroom id '
+                              'should **NOT** be nullable. Only classrooms that are free should be accepted. Only '
+                              'groups that are not (and their class too) in any classes at the specified time should '
+                              'be accepted.',
+        responses={
+            200: Response(
+                description='Data saved',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid data',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['role-professor', ]
+    )
+    def post(self, request, subject_id, group_id):
+        # TODO
+        pass
+
+
+########################################################
+#                                                      #
+#                       Occupancy                      #
+#                                                      #
+########################################################
+
+
+class OccupancyViewSet(APIView, TokenHandlerMixin):
+
+    @swagger_auto_schema(
+        operation_summary='Gets all the occupancies for the given time period.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses={
+            200: Response(
+                description='Subject occupancies.',
+                schema=Schema(
+                    title='OccupancyListResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'occupancies': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                '05-01-2020': Schema(
+                                    type=TYPE_OBJECT,
+                                    properties={
+                                        'id': Schema(type=TYPE_INTEGER, example=166),
+                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
+                                    },
+                                    required=[
+                                        'id',
+                                        'group_name',
+                                        'subject_name',
+                                        'teacher_name',
+                                        'start',
+                                        'end',
+                                        'occupancy_type',
+                                        'name',
+                                    ]
+                                )
+                            },
+                        ),
+                    },
+                    required=['status', 'occupancies', ]
+                ),
+            ),
+            401: Response(
+                description='Unauthorized access',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Occupancies', ],
+        manual_parameters=[
+            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+        ],
+    )
+    def get(self, request, *args, **kwargs):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            queryset = Occupancy.objects.all()
+            serializer = OccupancySerializer(queryset, many=True)
+            data = {
+                'status': 'success',
+                'occupancies': serializer.data,
+            }
+            return RF_Response(data)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class OccupancyDetailViewSet(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Gets information for an occupancy.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses={
+            200: Response(
+                description='Occupancy information',
+                schema=Schema(
+                    title='OccupancyResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'occupancy': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
+                            },
+                            required=[
+                                'id',
+                                'group_name',
+                                'subject_name',
+                                'teacher_name',
+                                'start',
+                                'end',
+                                'occupancy_type',
+                                'name',
+                            ]
+                        ),
+                    },
+                    required=['status', 'occupancy', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Occupancies', ]
+    )
+    def get(self, request, occupancy_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                occupancy_obj = Occupancy.objects.get(id=occupancy_id)
+
+                occupancy = {
+                    'id': occupancy_obj.id,
+                    'classroom_name': occupancy_obj.classroom.name,
+                    'group_name': occupancy_obj.group.name,
+                    'subject_name': occupancy_obj.subject.name,
+                    'teacher_name': f'{occupancy_obj.teacher.first_name} {occupancy_obj.teacher.last_name}',
+                    'start': occupancy_obj.start,
+                    'end': occupancy_obj.start + occupancy_list.duration,
+                    'occupancy_type': occupancy_obj.occupancy_type,
+                    'class_name': occupancy_obj.subject._class.name,
+                    'name': occupancy_obj.name,
+                }
+                return RF_Response({'status': 'success', 'occupancy': occupancy})
+            except Student.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Updates information for a student.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
+                              'Only filled fields should be updated.',
+        responses={
+            200: Response(
+                description='Student updated',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success')
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid email (code=`InvalidEmail`)\nInvalid phone number (code=`InvalidPhoneNumber`)\n'
+                            'Invalid rank (code=`InvalidRank`)\nPassword too simple (code=`PasswordTooSimple`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    }, required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['Occupancies', 'role-professor', ],
+        request_body=Schema(
+            title='OccupancyUpdateRequest',
+            type=TYPE_OBJECT,
+            properties={
+                'classroom_id': Schema(type=TYPE_INTEGER, example=166),
+                'start': Schema(type=TYPE_INTEGER, example=166),
+                'end': Schema(type=TYPE_INTEGER, example=166),
+                'name': Schema(type=TYPE_STRING, example='new_password'),
+            }
+        )
+    )
+    def put(self, request, student_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                occupancy = Occupancy.objects.get(id=student_id)
+                data = request.data
+                data_keys = data.keys()
+                if 'classroom_id' in data_keys:
+                    try:
+                        classroom = Classroom.objects.get(id=data['classroom_id'])
+                        occupancy._class = classroom
+                    except Class.DoesNotExist:
+                        return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+                if 'start' in data_keys:
+                    occupancy.last_name = data['start']
+                if 'end' in data_keys:
+                    occupancy.duration = data['end'] - occupancy.start_datetime
+                if 'name' in data_keys:
+                    occupancy.name = data['name']
+                occupancy.save()
+                return RF_Response({'status': 'success'})
+            except Occupancy.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_summary='Deletes the given occupancies using their IDs.',
+        operation_description='Note : only users with the role `administrator` should be able to access this route.',
+        responses=delete_response,
+        tags=['Occupancies', 'role-professor', ],
+    )
+    def delete(self, request, occupancy_id):
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+
+            try:
+                occupancy = Occupancy.objects.get(id=occupancy_id)
+                occupancy.delete()
+
+                return RF_Response({'status': 'success'})
+            except Occupancy.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},

@@ -161,7 +161,7 @@ SWAGGER_SETTINGS = {
         'drf_yasg.inspectors.DjangoRestResponsePagination',
         'drf_yasg.inspectors.CoreAPICompatInspector',
     ],
-    'TAGS_SORTER': None,
+    'TAGS_SORTER': 'alpha',
 }
 
 # Internationalization

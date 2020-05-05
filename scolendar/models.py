@@ -9,32 +9,15 @@ from .validators import start_datetime_validator, max_duration_validator, phone_
 
 levels = ['L1', 'L2', 'L3', 'M1', 'M2', ]
 
-level_list = [
-    ('L1', _('L1')),
-    ('L2', _('L2')),
-    ('L3', _('L3')),
-    ('M1', _('M1')),
-    ('M2', _('M2')),
-]
+level_list = [(x, _(x)) for x in levels]
 
 ranks = ['MACO', 'PROF', 'PRAG', 'PAST', 'ATER', 'MONI', ]
 
-rank_list = [
-    ('MACO', _('Maître de conférences')),
-    ('PROF', _('Professeur')),
-    ('PRAG', _('PRAG')),
-    ('PAST', _('PAST')),
-    ('ATER', _('ATER')),
-    ('MONI', _('Moniteur')),
-]
+rank_list = [(x, _(x)) for x in ranks]
 
 occupancy_list = ['CM', 'TD', 'TP', 'PROJ', 'ADM', 'EXT', ]
 
-occupancy_type_list = [
-    ('CM', _('CM')),
-    ('TD', _('TD')),
-    ('TP', _('TP')),
-]
+occupancy_type_list = [(x, _(x)) for x in occupancy_list]
 
 
 class Class(BaseGroup):  # registered
@@ -147,15 +130,16 @@ class SubjectTeacher(models.Model):  # registered
 
 
 class Occupancy(models.Model):  # registered
+    name = models.CharField(max_length=255, verbose_name=_('Nom'))
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, verbose_name=_('Salle'))
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, verbose_name=_('Groupe'))
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, verbose_name=_('Groupe'), blank=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Matière'))
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name=_('Interevenant'))
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name=_('Interevenant'), blank=True)
     start_datetime = models.DateTimeField(verbose_name=_('Date et Heure de début'), default=now,
                                           validators=[start_datetime_validator])
     duration = models.DurationField(verbose_name=_('Durée'), default=timedelta(days=0, hours=1, minutes=0, seconds=0),
                                     validators=[max_duration_validator])
-    occupancy_type = models.CharField(max_length=3, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
+    occupancy_type = models.CharField(max_length=4, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
 
     def save(self, *args, **kwargs):
         super(Occupancy, self).save(*args, **kwargs)
