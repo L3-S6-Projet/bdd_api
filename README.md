@@ -5,6 +5,13 @@
 ![Django CI MacOS](https://github.com/tag166tt/l3_s6_projet_bdd_api/workflows/Django%20CI%20MacOS/badge.svg?branch=master)
 [![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://dependabot.com/)
 
+## Table of contents
+  * [Supported platforms](#supported-platforms)
+  * [How to start the server?](#how-to-start-the-server-)
+    + [Run locally](#run-locally)
+    + [Run in a container](#run-in-a-container)
+  * [Use the API](#use-the-api)
+
 ## Supported platforms
 Code is automatically tested on latest versions Windows, Ubuntu and MacOS available in Github Actions.
 
