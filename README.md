@@ -37,6 +37,10 @@ The scripts should be run before starting the app. Thee following guide will sho
 The project can be run in a container.
 You need to build it and then run it as usual.
 
+```shell script
+docker-compose up
+```
+
 ## Use the API
 All test users have the same password : `passwdtest`.
 Their usernames are:
