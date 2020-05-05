@@ -8,5 +8,8 @@ WORKDIR /scolendar_api
 
 ADD . /scolendar_api/
 
-# Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
+
+COPY entrypoint.sh /build_without_venv.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
