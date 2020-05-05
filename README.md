@@ -19,17 +19,23 @@ Project is tested with the following Python versions:
 ### Run locally
 Build scripts are included in the project to run DB migrations and setup a basic super user. You first need to create a python virtual environment for the scripts to work.
 The folder containing the virtual environment should be named:
-- venv on Windows
-- .venv on Linux
+- `venv` on Windows
+- `.venv` on Linux
 
 Let PyCharm create it on Windows, and if you're on Linux, you should know how to do this anyway 😊
-
-The test user is identified by :
-- Username: test
-- Password: passwdtest
 
 The scripts should be run before starting the app. Thee following guide will show you how to add the proper script to run before build.
 
 ### Run in a container
 The project can be run in a container.
 You need to build it and then run it as usual.
+
+## Use the API
+All test users have the same password : `passwdtest`.
+Their usernames are:
+- Super user: `super`
+- Admin: `admin`
+- Student: `stu1`
+- Teacher: `tea1`
+
+A default class is also created: `L3 Informatique`.
