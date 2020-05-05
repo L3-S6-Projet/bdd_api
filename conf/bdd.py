@@ -2,7 +2,7 @@ import os
 import subprocess
 from platform import system
 
-MYSQL_DB = True
+MYSQL_DB = False
 
 
 def get_db_info(BASE_DIR: str) -> dict:
