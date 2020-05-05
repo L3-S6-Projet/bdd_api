@@ -10,6 +10,6 @@ ADD . /scolendar_api/
 
 RUN pip install -r requirements.txt
 
-COPY entrypoint.sh /build_without_venv.sh
+COPY build_without_venv.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
