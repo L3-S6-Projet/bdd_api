@@ -12,25 +12,15 @@
 - Roméo CHATEL-DESHAYES
 
 ## How to start the project?
-Build scripts are included in the project to run DB migrations and setup a basic super user.
+Build scripts are included in the project to run DB migrations and setup a basic super user. You first need to create a python virtual environment for the scripts to work.
+The folder containing the virtual environment should be named:
+- venv on Windows
+- .venv on Linux
+
+Let PyCharm create it on Windows, and if you're on Linux, you should know how to do this anyway 😊
 
 The test user is identified by :
 - Username: test
 - Password: passwdtest
 
 The scripts should be run before starting the app. Thee following guide will show you how to add the proper script to run before build.
-
-### Windows
-Go to the Run/Debug Configuration page
-
-![Run Debug Config](/readme_images/run_debug_edit.png)
-
-Then we need to add an action to be executed before launch
-
-![Run Debug Plus](/readme_images/run_conf.png)
-
-![Run Debug External Tool](/readme_images/run_conf_plus.png)
-
-We now need to add the proper information
-
-![Tool Config](/readme_images/tool_config.png)
