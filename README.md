@@ -1,5 +1,6 @@
 # Projet L3 S6
 [![Build Status](https://travis-ci.com/tag166tt/l3_s6_projet_bdd_api.svg?token=hfWoGD6NjtKs6Vbqwnfs&branch=master)](https://travis-ci.com/tag166tt/l3_s6_projet_bdd_api)
+![Django CI](https://github.com/tag166tt/l3_s6_projet_bdd_api/workflows/Django%20CI/badge.svg?branch=master)
 [![Dependabot](https://badgen.net/badge/Dependabot/enabled/green?icon=dependabot)](https://dependabot.com/)
 
 ## How to start the project?
