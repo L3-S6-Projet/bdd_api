@@ -1,0 +1,11 @@
+version: '1.0.0'
+
+services:
+  web:
+    build: .
+    command: bash -c "./build_without_venv.sh && python manage.py runserver 0:8000"
+    container_name: scolendar_api
+    volumes:
+      - .:/scolendar_api
+    ports:
+      - "8000:8000"
