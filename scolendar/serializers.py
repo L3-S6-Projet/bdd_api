@@ -110,6 +110,35 @@ class ClassroomSerializer(serializers.ModelSerializer):
         ]
 
 
+####################################################
+#                                                  #
+#                      Class                       #
+#                                                  #
+####################################################
+
+
+class ClassCreationSerializer(serializers.ModelSerializer):
+    def save(self, **kwargs):
+        _class = Class(name=self.validated_data['name'])
+        _class.save()
+        return _class
+
+    class Meta:
+        model = Class
+        fields = [
+            'name',
+        ]
+
+
+class ClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Class
+        fields = [
+            'id',
+            'name',
+        ]
+
+
 ######################################################
 #                                                    #
 #                       Student                      #

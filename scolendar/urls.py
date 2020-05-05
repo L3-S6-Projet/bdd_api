@@ -16,5 +16,12 @@ urlpatterns = [
     url(r'classrooms/(?P<classroom_id>[0-9]+)$', ClassroomDetailViewSet.as_view()),
     url(r'classrooms/(?P<classroom_id>[0-9]+)/occupancies$', ClassroomOccupancyViewSet.as_view()),
 
+    url(r'class$', ClassViewSet.as_view()),
+    url(r'class/(?P<class_id>[0-9]+)$', ClassDetailViewSet.as_view()),
+    url(r'class/(?P<class_id>[0-9]+)/occupancies$', ClassOccupancyViewSet.as_view()),
+
     url(r'students$', StudentViewSet.as_view()),
+    url(r'students/(?P<student_id>[0-9]+)$', StudentDetailViewSet.as_view()),
+    url(r'students/(?P<student_id>[0-9]+)/occupancies$', StudentOccupancyDetailViewSet.as_view()),
+    url(r'students/(?P<student_id>[0-9]+)/subjects$', StudentSubjectDetailViewSet.as_view()),
 ]

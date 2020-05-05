@@ -11,6 +11,11 @@ class ClassroomResultSetPagination(PageNumberPagination):
     max_page_size = 1000
 
 
+class ClassResultSetPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 1000
+
+
 class PaginationHandlerMixin(object):
     @property
     def paginator(self):

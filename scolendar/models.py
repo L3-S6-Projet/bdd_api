@@ -7,7 +7,9 @@ from django.utils.translation import gettext as _
 
 from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator
 
-levels = [
+levels = ['L1', 'L2', 'L3', 'M1', 'M2', ]
+
+level_list = [
     ('L1', _('L1')),
     ('L2', _('L2')),
     ('L3', _('L3')),
@@ -26,7 +28,7 @@ rank_list = [
     ('MONI', _('Moniteur')),
 ]
 
-occupancy_list = ['CM', 'TD', 'TP', 'PROJ', 'ADM', 'EXT']
+occupancy_list = ['CM', 'TD', 'TP', 'PROJ', 'ADM', 'EXT', ]
 
 occupancy_type_list = [
     ('CM', _('CM')),
@@ -36,6 +38,8 @@ occupancy_type_list = [
 
 
 class Class(BaseGroup):  # registered
+    level = models.CharField(max_length=2, verbose_name=_('Niveau'), choices=level_list)
+
     def clean(self):
         class_name_validator(self.name)
         super(Class, self).clean()

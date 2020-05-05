@@ -8,8 +8,8 @@ from conf import conf
 
 
 def class_name_validator(name: str):
-    from .models import levels
-    if not name.startswith(tuple([i[0] for i in levels])):
+    from .models import level_list
+    if not name.startswith(tuple([i[0] for i in level_list])):
         raise ValidationError(_('Nom de classe incorrect'))
 
 
