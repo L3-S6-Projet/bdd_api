@@ -1,4 +1,4 @@
-name: Django CI
+name: Django CI MacOS
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       max-parallel: 4
       matrix:
