@@ -1,4 +1,4 @@
-name: Django CI Windows Server
+name: Django CI Windows
 
 on:
   push:
