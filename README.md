@@ -10,6 +10,11 @@ Code is automatically tested on latest versions Windows, Ubuntu and MacOS availa
 
 The project also contains necessary files to run as a container. The container build is also tested in Github Actions.
 
+Project is tested with the following Python versions:
+- 3.6
+- 3.7
+- 3.8
+
 ## How to start the project?
 Build scripts are included in the project to run DB migrations and setup a basic super user. You first need to create a python virtual environment for the scripts to work.
 The folder containing the virtual environment should be named:
