@@ -7,7 +7,7 @@
 
 ## Table of contents
   * [Supported platforms](#supported-platforms)
-  * [How to start the server?](#how-to-start-the-server-)
+  * [How to start the server](#how-to-start-the-server)
     + [Run locally](#run-locally)
     + [Run in a container](#run-in-a-container)
   * [Use the API](#use-the-api)
@@ -22,7 +22,7 @@ Project is tested with the following Python versions:
 - 3.7
 - 3.8
 
-## How to start the server?
+## How to start the server
 ### Run locally
 Build scripts are included in the project to run DB migrations and setup a basic super user. You first need to create a python virtual environment for the scripts to work.
 The folder containing the virtual environment should be named:
