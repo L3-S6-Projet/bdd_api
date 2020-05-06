@@ -16,3 +16,5 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag scolendar:$(date +%s)
+    - name: Run Docker Image
+      run: docker-compose up
