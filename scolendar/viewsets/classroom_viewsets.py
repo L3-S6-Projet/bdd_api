@@ -546,7 +546,7 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -558,7 +558,7 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -570,7 +570,7 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
