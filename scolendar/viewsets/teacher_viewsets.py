@@ -783,7 +783,7 @@ class TeacherSubjectDetailViewSet(APIView, TokenHandlerMixin):
                                                 'name': Schema(type=TYPE_STRING, example='Groupe 1'),
                                                 'count': Schema(type=TYPE_INTEGER, example=166),
                                             },
-                                            required=['id', 'name', 'count', ]
+                                            required=['number', 'name', 'count', ]
                                         )
                                     ),
                                 },

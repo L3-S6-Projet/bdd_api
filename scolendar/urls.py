@@ -36,7 +36,7 @@ urlpatterns = [
     url(r'subjects/(?P<subject_id>[0-9]+)/occupancies$', subjects_occupancies),
     url(r'subjects/(?P<subject_id>[0-9]+)/teachers$', subjects_teachers),
     url(r'subjects/(?P<subject_id>[0-9]+)/groups$', subjects_groups),
-    url(r'subjects/(?P<subject_id>[0-9]+)/groups/(?P<group_id>[0-9]+)/occupancies$', subjects_groups_occupancies),
+    url(r'subjects/(?P<subject_id>[0-9]+)/groups/(?P<group_number>[0-9]+)/occupancies$', subjects_groups_occupancies),
 
     url(r'occupancies$', occupancies),
     url(r'occupancies/(?P<occupancy_id>[0-9]+)$', occupancies_details),

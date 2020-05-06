@@ -713,7 +713,7 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                               ' free should be accepted. Only classes that are not (any of their groups too) in any'
                               ' classes at the specified time should be accepted.',
         responses={
-            200: Response(
+            201: Response(
                 description='Data saved',
                 schema=Schema(
                     title='SimpleSuccessResponse',
@@ -746,7 +746,8 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
+                description='Invalid ID (code=`InvalidID`)\nInvalid classroom ID (code=`InvalidID`)\nInvalid teacher ID'
+                            ' (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -757,7 +758,10 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             422: Response(
-                description='Invalid data',
+                description='Invalid occupancy type (code=`InvalidOccupancyType`)\nThe classroom is already occupied '
+                            '(code=`ClassroomAlreadyOccupied`)\nThe class (or group) is already occupied '
+                            '(code=`ClassOrGroupAlreadyOccupied`).\nEnd is before start (code=`EndBeforeStart`)\nThe '
+                            'teacher does not teach that subject (code=`TeacherDoesNotTeach`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -778,8 +782,9 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                 'end': Schema(type=TYPE_INTEGER, example=166),
                 'name': Schema(type=TYPE_STRING, example='Algorithmique CM Groupe 1'),
                 'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                'teacher_id': Schema(type=TYPE_INTEGER, example=166),
             },
-            required=['classroom_id', 'start', 'end', 'name', 'occupancy_type', ]
+            required=['classroom_id', 'start', 'end', 'name', 'occupancy_type', 'teacher_id', ]
         )
     )
     def post(self, request, subject_id):
@@ -1133,43 +1138,48 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                     title='Occupancies',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
-                        'occupancies': Schema(
-                            type=TYPE_OBJECT,
-                            properties={
-                                '05-01-2020': Schema(
-                                    type=TYPE_OBJECT,
-                                    properties={
-                                        'id': Schema(type=TYPE_INTEGER, example=166),
-                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
-                                    },
-                                    required=[
-                                        'id',
-                                        'group_name',
-                                        'subject_name',
-                                        'teacher_name',
-                                        'start',
-                                        'end',
-                                        'occupancy_type',
-                                        'name',
-                                    ]
-                                )
-                            },
-                            required=[
-                                'status',
-                                'occupancies',
-                            ]
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'days': Schema(
+                            type=TYPE_ARRAY,
+                            items=Schema(
+                                type=TYPE_OBJECT,
+                                properties={
+                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
+                                    'occupancies': Schema(
+                                        type=TYPE_ARRAY,
+                                        items=Schema(
+                                            type=TYPE_OBJECT,
+                                            properties={
+                                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                                'name': Schema(type=TYPE_STRING,
+                                                               example='Algorithmique TP Groupe 1'),
+                                            },
+                                            required=[
+                                                'id',
+                                                'group_name',
+                                                'subject_name',
+                                                'teacher_name',
+                                                'start',
+                                                'end',
+                                                'occupancy_type',
+                                                'name',
+                                            ]
+                                        ),
+                                    ),
+                                },
+                                required=['date', 'occupancies', ]
+                            )
                         ),
                     },
-                    required=['status', ]
+                    required=['status', 'days', ]
                 )
             ),
             401: Response(
@@ -1197,19 +1207,7 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
-                schema=Schema(
-                    title='ErrorResponse',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
-                        'code': Schema(type=TYPE_STRING, enum=error_codes),
-                    },
-                    required=['status', 'code', ]
-                )
-            ),
-            422: Response(
-                description='Invalid data',
+                description='Invalid ID (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1223,12 +1221,30 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
         },
         tags=['role-professor', ],
         manual_parameters=[
-            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(
+                name='start',
+                description='Start timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False,
+            ),
+            Parameter(
+                name='end',
+                description='End timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
+            Parameter(
+                name='occupancies_per_day',
+                description='Pass 0 to return ALL the events',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
         ],
     )
-    def get(self, request, subject_id, group_id):
+    def get(self, request, subject_id, group_number):
         # TODO
         pass
 
@@ -1276,7 +1292,8 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
+                description='Invalid ID (code=`InvalidID`)\nInvalid classroom ID (code=`InvalidID`)\nInvalid teacher ID'
+                            ' (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1288,7 +1305,10 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             422: Response(
-                description='Invalid data',
+                description='Invalid occupancy type (code=`InvalidOccupancyType`)\nThe classroom is already occupied '
+                            '(code=`ClassroomAlreadyOccupied`)\nThe class (or group) is already occupied '
+                            '(code=`ClassOrGroupAlreadyOccupied`).\nEnd is before start (code=`EndBeforeStart`)\nThe '
+                            'teacher does not teach that subject (code=`TeacherDoesNotTeach`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1302,6 +1322,6 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
         },
         tags=['role-professor', ]
     )
-    def post(self, request, subject_id, group_id):
+    def post(self, request, subject_id, group_number):
         # TODO
         pass
