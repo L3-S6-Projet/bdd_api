@@ -10,7 +10,6 @@ from scolendar.models import occupancy_list, Classroom
 from scolendar.paginations import PaginationHandlerMixin, ClassroomResultSetPagination
 from scolendar.serializers import ClassroomCreationSerializer, ClassroomSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
-from scolendar.viewsets.responses_viewsets import update_response
 
 
 class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -35,6 +34,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                                         example=166),
                         'classrooms': Schema(type=TYPE_ARRAY,
                                              items=Schema(
+                                                 title='Classroom',
                                                  type=TYPE_OBJECT,
                                                  properties={
                                                      'id': Schema(
@@ -48,7 +48,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                                                          example=166),
                                                  }, required=['id', 'name', 'capacity', ]), ),
                     },
-                    required=['status', 'total', 'teachers', ]
+                    required=['status', 'total', 'classrooms', ]
                 )
             ),
             401: Response(
@@ -84,7 +84,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
         },
-        tags=['Classrooms'],
+        tags=['Classrooms', 'role-professor'],
         manual_parameters=[
             Parameter(name='query', in_=IN_QUERY, type=TYPE_STRING, required=False),
         ],
@@ -153,8 +153,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
             422: Response(
-                description='Invalid email (code=`InvalidEmail`)\nInvalid phone number (code=`InvalidPhoneNumber`)\n'
-                            'Invalid rank (code=`InvalidRank`)',
+                description='Invalid capacity (code=`InvalidCapacity`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -229,7 +228,7 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -247,6 +246,22 @@ class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
             ),
             404: Response(
                 description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Invalid ID(s) (code=`ClassroomUsed`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -308,6 +323,7 @@ class ClassroomDetailViewSet(APIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(type=TYPE_STRING, example='success'),
                         'classroom': Schema(
+                            title='Classroom',
                             type=TYPE_OBJECT,
                             properties={
                                 'id': Schema(type=TYPE_INTEGER, example=166),
@@ -337,13 +353,13 @@ class ClassroomDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -389,7 +405,55 @@ class ClassroomDetailViewSet(APIView, TokenHandlerMixin):
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
                               'The omission of the `capacity` field is not an error : it should not be able to be '
                               'modified.',
-        responses=update_response,
+        responses={
+            200: Response(
+                description='Data updated',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
         tags=['Classrooms', ],
         request_body=Schema(
             title='ClassroomUpdateRequest',
@@ -432,43 +496,47 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='success'),
-                        'occuupancies': Schema(
-                            type=TYPE_OBJECT,
-                            properties={
-                                '05-01-2020': Schema(
-                                    type=TYPE_OBJECT,
-                                    properties={
-                                        'id': Schema(type=TYPE_INTEGER, example=166),
-                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                        'name': Schema(type=TYPE_STRING, example='Algorithmique CM Groupe 1'),
-                                    },
-                                    required=[
-                                        'id',
-                                        'group_name',
-                                        'subject_name',
-                                        'teacher_name',
-                                        'start',
-                                        'end',
-                                        'occupancy_type',
-                                        'name',
-                                    ]
-                                ),
-                            },
-                            required=[
-                                'id',
-                                'name',
-                                'capacity',
-                            ]
+                        'days': Schema(
+                            type=TYPE_ARRAY,
+                            items=Schema(
+                                type=TYPE_OBJECT,
+                                properties={
+                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
+                                    'occupancies': Schema(
+                                        type=TYPE_ARRAY,
+                                        items=Schema(
+                                            type=TYPE_OBJECT,
+                                            properties={
+                                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                                'name': Schema(type=TYPE_STRING,
+                                                               example='Algorithmique TP Groupe 1'),
+                                            },
+                                            required=[
+                                                'id',
+                                                'group_name',
+                                                'subject_name',
+                                                'teacher_name',
+                                                'start',
+                                                'end',
+                                                'occupancy_type',
+                                                'name',
+                                            ]
+                                        ),
+                                    ),
+                                },
+                                required=['date', 'occupancies', ]
+                            )
                         ),
                     },
-                    required=['status', 'occuupancies', ]
+                    required=['status', 'days', ]
                 )
             ),
             401: Response(
@@ -484,13 +552,13 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -510,9 +578,27 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
         },
         tags=['Classrooms', ],
         manual_parameters=[
-            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(
+                name='start',
+                description='Start timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False,
+            ),
+            Parameter(
+                name='end',
+                description='End timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
+            Parameter(
+                name='occupancies_per_day',
+                description='Pass 0 to return ALL the events',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
         ],
     )
     def get(self, request, classroom_id):

@@ -11,7 +11,6 @@ from scolendar.models import occupancy_list, Classroom, levels, Class
 from scolendar.paginations import PaginationHandlerMixin, ClassResultSetPagination
 from scolendar.serializers import ClassSerializer, ClassCreationSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
-from scolendar.viewsets.responses_viewsets import update_response
 
 
 class ClassViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -310,7 +309,43 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
     @swagger_auto_schema(
         operation_summary='Updates information for a class.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.',
-        responses=update_response,
+        responses={
+            200: Response(
+                description='Data updated',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                    },
+                    required=['status', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Password too simple (code=`PasswordTooSimple`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, example='PasswordTooSimple', enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
         tags=['Classes', ],
         request_body=Schema(
             title='ClassroomUpdateRequest',
