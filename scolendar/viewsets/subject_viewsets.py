@@ -13,7 +13,6 @@ from scolendar.models import Student, Teacher, occupancy_list, Classroom, Class,
 from scolendar.paginations import PaginationHandlerMixin, SubjectResultSetPagination
 from scolendar.serializers import OccupancyCreationSerializer, SubjectSerializer, SubjectCreationSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
-from scolendar.viewsets.responses_viewsets import delete_response
 
 
 class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -204,7 +203,71 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
         operation_summary='Deletes the given students using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
                               'This request should trigger the re-organization of students in the affected groups.',
-        responses=delete_response,
+        responses={
+            200: Response(
+                description='Data deleted',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'success': Schema(
+                            type=TYPE_STRING,
+                            example='success'),
+                    },
+                    required=['success', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
         tags=['Subjects', ],
         request_body=Schema(
             title='IDRequest',

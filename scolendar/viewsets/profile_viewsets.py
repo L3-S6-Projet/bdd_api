@@ -165,7 +165,7 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (administrator) (code=`InvalidCredentials`)',
+                description='Insufficient rights (administrator) (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -212,7 +212,7 @@ class ProfileICalFeed(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (administrator) (code=`InvalidCredentials`)',
+                description='Insufficient rights (administrator) (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,

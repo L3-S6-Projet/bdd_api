@@ -9,7 +9,6 @@ from scolendar.errors import error_codes
 from scolendar.models import Student, occupancy_list, Classroom, Class, Occupancy
 from scolendar.serializers import OccupancySerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
-from scolendar.viewsets.responses_viewsets import delete_response
 
 
 class OccupancyViewSet(APIView, TokenHandlerMixin):
@@ -324,7 +323,71 @@ class OccupancyDetailViewSet(APIView, TokenHandlerMixin):
     @swagger_auto_schema(
         operation_summary='Deletes the given occupancies using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.',
-        responses=delete_response,
+        responses={
+            200: Response(
+                description='Data deleted',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'success': Schema(
+                            type=TYPE_STRING,
+                            example='success'),
+                    },
+                    required=['success', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
         tags=['Occupancies', 'role-professor', ],
     )
     def delete(self, request, occupancy_id):

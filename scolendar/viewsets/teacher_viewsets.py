@@ -16,7 +16,6 @@ from scolendar.paginations import PaginationHandlerMixin, StudentResultSetPagina
 from scolendar.serializers import TeacherCreationSerializer, TeacherSerializer
 from scolendar.validators import phone_number_validator
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
-from scolendar.viewsets.responses_viewsets import delete_response
 
 
 class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -62,9 +61,29 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                                                    )
                                                }, required=['id', 'first_name', 'last_name', 'email',
                                                             'phone_number', ]), ),
-                    }, required=['status', 'total', 'teachers', ])),
+                    },
+                    required=['status', 'total', 'teachers', ]
+                )
+            ),
             401: Response(
-                description='Unauthorized access',
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InvalidCredentials',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -76,9 +95,12 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             type=TYPE_STRING,
                             value='InsufficientAuthorization',
                             enum=error_codes),
-                    }, required=['status', 'code', ])),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
         },
-        tags=['Teachers'],
+        tags=['Teachers', ],
         manual_parameters=[
             Parameter(name='query', in_=IN_QUERY, type=TYPE_STRING, required=False),
         ],
@@ -120,7 +142,7 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                                            example='aBcD1234'),
                     }, required=['status', 'username', 'password', ])),
             401: Response(
-                description='Unauthorized access',
+                description='Invalid token (code=`InvalidCredentials`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -136,7 +158,7 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -175,8 +197,10 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
             properties={
                 'first_name': Schema(type=TYPE_STRING, example='John'),
                 'last_name': Schema(type=TYPE_STRING, example='Doe'),
-                'class_id': Schema(type=TYPE_INTEGER, example=166),
-            }, required=['first_name', 'last_name', 'class_id', ]
+                'email': Schema(type=TYPE_STRING, example='john.doe@email.com'),
+                'phone_number': Schema(type=TYPE_STRING, example='06 61 66 16 61'),
+                'rank': Schema(type=TYPE_STRING, enum=ranks),
+            }, required=['first_name', 'last_name', 'email', 'phone_number', 'rank', ]
         )
     )
     def post(self, request, *args, **kwargs):
@@ -196,8 +220,90 @@ class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
     @swagger_auto_schema(
         operation_summary='Deletes the given students using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
-                              'This request should trigger the re-organization of students in the affected groups.',
-        responses=delete_response,
+                              'This request should be denied if the professors are in charge of any subjects. This '
+                              'should cascade and delete any occupancies they are a part of, and remove them from any '
+                              'subjects they took part in.',
+        responses={
+            200: Response(
+                description='Data deleted',
+                schema=Schema(
+                    title='SimpleSuccessResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'success': Schema(
+                            type=TYPE_STRING,
+                            example='success'),
+                    },
+                    required=['success', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            value='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            value='InsufficientAuthorization',
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            404: Response(
+                description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='The teacher is still in charge of a subject (code=`TeacherInCharge`).',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
         tags=['Teachers'],
         request_body=Schema(
             title='IDRequest',
@@ -307,7 +413,7 @@ class TeacherDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -404,7 +510,7 @@ class TeacherDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -422,7 +528,7 @@ class TeacherDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -520,42 +626,47 @@ class TeacherOccupancyDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='success'),
-                        'occupancies': Schema(
-                            type=TYPE_OBJECT,
-                            properties={
-                                '05-01-2020': Schema(
-                                    type=TYPE_OBJECT,
-                                    properties={
-                                        'id': Schema(type=TYPE_INTEGER, example=166),
-                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
-                                    },
-                                    required=[
-                                        'id',
-                                        'group_name',
-                                        'subject_name',
-                                        'teacher_name',
-                                        'start',
-                                        'end',
-                                        'occupancy_type',
-                                        'name',
-                                    ]
-                                )
-                            },
-                            required=[
-                                'status',
-                                'occupancies',
-                            ]
+                        'days': Schema(
+                            type=TYPE_ARRAY,
+                            items=Schema(
+                                type=TYPE_OBJECT,
+                                properties={
+                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
+                                    'occupancies': Schema(
+                                        type=TYPE_ARRAY,
+                                        items=Schema(
+                                            type=TYPE_OBJECT,
+                                            properties={
+                                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                                'name': Schema(type=TYPE_STRING,
+                                                               example='Algorithmique TP Groupe 1'),
+                                            },
+                                            required=[
+                                                'id',
+                                                'group_name',
+                                                'subject_name',
+                                                'teacher_name',
+                                                'start',
+                                                'end',
+                                                'occupancy_type',
+                                                'name',
+                                            ]
+                                        ),
+                                    ),
+                                },
+                                required=['date', 'occupancies', ]
+                            )
                         ),
                     },
-                    required=['status', 'occupancies', ]
+                    required=['status', 'days', ]
                 )
             ),
             401: Response(
@@ -571,7 +682,7 @@ class TeacherOccupancyDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -595,7 +706,12 @@ class TeacherOccupancyDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
         },
-        tags=['Teachers', 'role-professor', ]
+        tags=['Teachers', 'role-professor', ],
+        manual_parameters=[
+            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+        ]
     )
     def get(self, request, teacher_id):
         try:
@@ -663,7 +779,7 @@ class TeacherSubjectDetailViewSet(APIView, TokenHandlerMixin):
                                         items=Schema(
                                             type=TYPE_OBJECT,
                                             properties={
-                                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                                'number': Schema(type=TYPE_INTEGER, example=166),
                                                 'name': Schema(type=TYPE_STRING, example='Groupe 1'),
                                                 'count': Schema(type=TYPE_INTEGER, example=166),
                                             },
@@ -691,7 +807,7 @@ class TeacherSubjectDetailViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
