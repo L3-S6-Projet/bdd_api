@@ -1,38 +1,40 @@
 from django.conf.urls import url
 
-from scolendar.views import *
+from scolendar.views import session, profile, teachers, teachers_details, teacher_occupancies, teacher_subjects, \
+    classrooms, classroom_details, classrooms_occupancies, class_, class_details, class_occupancies, students, \
+    students_details, students_occupancies, students_subjects, subjects, subjects_details, subjects_occupancies, \
+    subjects_teachers, subjects_groups, subjects_groups_occupancies, occupancies, occupancies_details
 
 urlpatterns = [
-    url(r'session$', AuthViewSet.as_view()),
+    url(r'session$', session),
 
-    url(r'profile$', ProfileViewSet.as_view()),
+    url(r'profile$', profile),
 
-    url(r'teachers$', TeacherViewSet.as_view()),
-    url(r'teachers/(?P<teacher_id>[0-9]+)$', TeacherDetailViewSet.as_view()),
-    url(r'teachers/(?P<teacher_id>[0-9]+)/occupancies$', TeacherOccupancyDetailViewSet.as_view()),
-    url(r'teachers/(?P<teacher_id>[0-9]+)/subjects$', TeacherSubjectDetailViewSet.as_view()),
+    url(r'teachers$', teachers),
+    url(r'teachers/(?P<teacher_id>[0-9]+)$', teachers_details),
+    url(r'teachers/(?P<teacher_id>[0-9]+)/occupancies$', teacher_occupancies),
+    url(r'teachers/(?P<teacher_id>[0-9]+)/subjects$', teacher_subjects),
 
-    url(r'classrooms$', ClassroomViewSet.as_view()),
-    url(r'classrooms/(?P<classroom_id>[0-9]+)$', ClassroomDetailViewSet.as_view()),
-    url(r'classrooms/(?P<classroom_id>[0-9]+)/occupancies$', ClassroomOccupancyViewSet.as_view()),
+    url(r'classrooms$', classrooms),
+    url(r'classrooms/(?P<classroom_id>[0-9]+)$', classroom_details),
+    url(r'classrooms/(?P<classroom_id>[0-9]+)/occupancies$', classrooms_occupancies),
 
-    url(r'class$', ClassViewSet.as_view()),
-    url(r'class/(?P<class_id>[0-9]+)$', ClassDetailViewSet.as_view()),
-    url(r'class/(?P<class_id>[0-9]+)/occupancies$', ClassOccupancyViewSet.as_view()),
+    url(r'class$', class_),
+    url(r'class/(?P<class_id>[0-9]+)$', class_details),
+    url(r'class/(?P<class_id>[0-9]+)/occupancies$', class_occupancies),
 
-    url(r'students$', StudentViewSet.as_view()),
-    url(r'students/(?P<student_id>[0-9]+)$', StudentDetailViewSet.as_view()),
-    url(r'students/(?P<student_id>[0-9]+)/occupancies$', StudentOccupancyDetailViewSet.as_view()),
-    url(r'students/(?P<student_id>[0-9]+)/subjects$', StudentSubjectDetailViewSet.as_view()),
+    url(r'students$', students),
+    url(r'students/(?P<student_id>[0-9]+)$', students_details),
+    url(r'students/(?P<student_id>[0-9]+)/occupancies$', students_occupancies),
+    url(r'students/(?P<student_id>[0-9]+)/subjects$', students_subjects),
 
-    url(r'subjects$', SubjectViewSet.as_view()),
-    url(r'subjects/(?P<subject_id>[0-9]+)$', SubjectDetailViewSet.as_view()),
-    url(r'subjects/(?P<subject_id>[0-9]+)/occupancies$', SubjectOccupancyViewSet.as_view()),
-    url(r'subjects/(?P<subject_id>[0-9]+)/teachers$', SubjectTeacherViewSet.as_view()),
-    url(r'subjects/(?P<subject_id>[0-9]+)/groups$', SubjectGroupViewSet.as_view()),
-    url(r'subjects/(?P<subject_id>[0-9]+)/groups/(?P<group_id>[0-9]+)/occupancies$',
-        SubjectGroupOccupancyViewSet.as_view()),
+    url(r'subjects$', subjects),
+    url(r'subjects/(?P<subject_id>[0-9]+)$', subjects_details),
+    url(r'subjects/(?P<subject_id>[0-9]+)/occupancies$', subjects_occupancies),
+    url(r'subjects/(?P<subject_id>[0-9]+)/teachers$', subjects_teachers),
+    url(r'subjects/(?P<subject_id>[0-9]+)/groups$', subjects_groups),
+    url(r'subjects/(?P<subject_id>[0-9]+)/groups/(?P<group_id>[0-9]+)/occupancies$', subjects_groups_occupancies),
 
-    url(r'occupancies$', OccupancyViewSet.as_view()),
-    url(r'occupancies/(?P<occupancy_id>[0-9]+)$', OccupancyDetailViewSet.as_view()),
+    url(r'occupancies$', occupancies),
+    url(r'occupancies/(?P<occupancy_id>[0-9]+)$', occupancies_details),
 ]
