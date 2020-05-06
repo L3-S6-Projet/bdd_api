@@ -6,10 +6,11 @@ from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
-from scolendar.models import occupancy_list, Classroom
+from scolendar.models import Classroom
 from scolendar.paginations import PaginationHandlerMixin, ClassroomResultSetPagination
 from scolendar.serializers import ClassroomCreationSerializer, ClassroomSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
+from scolendar.viewsets.common.schemas import occupancies_schema
 
 
 class ClassroomViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -491,53 +492,7 @@ class ClassroomOccupancyViewSet(APIView, TokenHandlerMixin):
         responses={
             200: Response(
                 description='Classroom occupancies',
-                schema=Schema(
-                    title='Occupancies',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(type=TYPE_STRING, example='success'),
-                        'days': Schema(
-                            type=TYPE_ARRAY,
-                            items=Schema(
-                                type=TYPE_OBJECT,
-                                properties={
-                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
-                                    'occupancies': Schema(
-                                        type=TYPE_ARRAY,
-                                        items=Schema(
-                                            type=TYPE_OBJECT,
-                                            properties={
-                                                'id': Schema(type=TYPE_INTEGER, example=166),
-                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                                'name': Schema(type=TYPE_STRING,
-                                                               example='Algorithmique TP Groupe 1'),
-                                            },
-                                            required=[
-                                                'id',
-                                                'group_name',
-                                                'subject_name',
-                                                'teacher_name',
-                                                'start',
-                                                'end',
-                                                'occupancy_type',
-                                                'name',
-                                            ]
-                                        ),
-                                    ),
-                                },
-                                required=['date', 'occupancies', ]
-                            )
-                        ),
-                    },
-                    required=['status', 'days', ]
-                )
+                schema=occupancies_schema,
             ),
             401: Response(
                 description='Invalid token (code=`InvalidCredentials`)',

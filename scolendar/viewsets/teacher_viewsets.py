@@ -1,8 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, \
-    TYPE_BOOLEAN, IN_QUERY
+from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -11,11 +10,12 @@ from rest_framework.views import APIView
 
 from conf.conf import get_service_coefficients
 from scolendar.errors import error_codes
-from scolendar.models import Teacher, ranks, occupancy_list
+from scolendar.models import Teacher, ranks
 from scolendar.paginations import PaginationHandlerMixin, StudentResultSetPagination
 from scolendar.serializers import TeacherCreationSerializer, TeacherSerializer
 from scolendar.validators import phone_number_validator
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
+from scolendar.viewsets.common.schemas import teacher_list_schema, occupancies_schema
 
 
 class TeacherViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
@@ -621,53 +621,7 @@ class TeacherOccupancyDetailViewSet(APIView, TokenHandlerMixin):
         responses={
             200: Response(
                 description='Teacher information',
-                schema=Schema(
-                    title='TeacherResponse',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(type=TYPE_STRING, example='success'),
-                        'days': Schema(
-                            type=TYPE_ARRAY,
-                            items=Schema(
-                                type=TYPE_OBJECT,
-                                properties={
-                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
-                                    'occupancies': Schema(
-                                        type=TYPE_ARRAY,
-                                        items=Schema(
-                                            type=TYPE_OBJECT,
-                                            properties={
-                                                'id': Schema(type=TYPE_INTEGER, example=166),
-                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                                'name': Schema(type=TYPE_STRING,
-                                                               example='Algorithmique TP Groupe 1'),
-                                            },
-                                            required=[
-                                                'id',
-                                                'group_name',
-                                                'subject_name',
-                                                'teacher_name',
-                                                'start',
-                                                'end',
-                                                'occupancy_type',
-                                                'name',
-                                            ]
-                                        ),
-                                    ),
-                                },
-                                required=['date', 'occupancies', ]
-                            )
-                        ),
-                    },
-                    required=['status', 'days', ]
-                )
+                schema=occupancies_schema,
             ),
             401: Response(
                 description='Invalid token (code=`InvalidCredentials`)',
@@ -760,20 +714,7 @@ class TeacherSubjectDetailViewSet(APIView, TokenHandlerMixin):
                                     'id': Schema(type=TYPE_INTEGER, example=166),
                                     'name': Schema(type=TYPE_STRING, example='PPPE'),
                                     'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                    'teachers': Schema(
-                                        type=TYPE_ARRAY,
-                                        items=Schema(
-                                            type=TYPE_OBJECT,
-                                            properties={
-                                                'first_name': Schema(type=TYPE_STRING, example='John'),
-                                                'last_name': Schema(type=TYPE_STRING, example='Doe'),
-                                                'in_charge': Schema(type=TYPE_BOOLEAN, example=True),
-                                                'email': Schema(type=TYPE_STRING, example='cranky.duck@example.com'),
-                                                'phone_number': Schema(type=TYPE_STRING, example='06 61 66 16 61'),
-                                            },
-                                            required=['first_name', 'last_name', 'in_charge', 'email', 'phone_number', ]
-                                        )
-                                    ),
+                                    'teachers': teacher_list_schema,
                                     'groups': Schema(
                                         type=TYPE_ARRAY,
                                         items=Schema(
