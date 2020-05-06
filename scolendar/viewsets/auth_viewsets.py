@@ -109,8 +109,8 @@ class AuthViewSet(ObtainAuthToken, TokenHandlerMixin):
                     required=['status']
                 )
             ),
-            403: Response(
-                description='Invalid token (code=`InsufficientAuthorization`)',
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,

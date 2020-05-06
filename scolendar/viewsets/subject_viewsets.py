@@ -52,13 +52,25 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
             401: Response(
-                description='Unauthorized access',
+                description='Invalid token (code=`InvalidCredentials`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, value='error'),
-                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -103,7 +115,7 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                 )
             ),
             401: Response(
-                description='Unauthorized access',
+                description='Invalid token (code=`InvalidCredentials`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -113,14 +125,13 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             value='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -130,13 +141,12 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             value='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
+                description='Invalid class id (code=`InvalidID`)\nInvalid teacher in charge id (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -150,23 +160,6 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                     }
                 )
             ),
-            422: Response(
-                description='Invalid email (code=`InvalidEmail`)\nInvalid phone number (code=`InvalidPhoneNumber`)\n'
-                            'Invalid rank (code=`InvalidRank`)',
-                schema=Schema(
-                    title='ErrorResponse',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(
-                            type=TYPE_STRING,
-                            value='error'),
-                        'code': Schema(
-                            type=TYPE_STRING,
-                            enum=error_codes),
-                    }, required=['status', 'code', ]
-                )
-            ),
-
         },
         tags=['Subjects', ],
         request_body=Schema(
@@ -202,7 +195,8 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
     @swagger_auto_schema(
         operation_summary='Deletes the given students using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.\n'
-                              'This request should trigger the re-organization of students in the affected groups.',
+                              'This request should be denied if the subject is used in any occupancy (be it directly, '
+                              'or via a group).',
         responses={
             200: Response(
                 description='Data deleted',
@@ -228,14 +222,13 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             value='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InsufficientAuthorization',
                             enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -245,7 +238,6 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             value='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InsufficientAuthorization',
                             enum=error_codes),
                     },
                     required=['status', 'code', ]
@@ -253,6 +245,22 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
             ),
             404: Response(
                 description='Invalid ID(s) (code=`InvalidID`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(
+                            type=TYPE_STRING,
+                            example='error'),
+                        'code': Schema(
+                            type=TYPE_STRING,
+                            enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            422: Response(
+                description='Subject used in an occupancy (code=`SubjectUsed`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -360,19 +368,19 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -384,7 +392,7 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -454,37 +462,38 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             404: Response(
-                description='Invalid ID(s) (code=`InvalidID`)',
+                description='Invalid ID (code=`InvalidID`)\nInvalid teacher in charge id (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             422: Response(
-                description='Invalid data',
+                description='The provided teacher in charge is not already a teacher of the subject '
+                            '(code=`TeacherNotInCharge`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -557,52 +566,57 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
 class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
     @swagger_auto_schema(
         operation_summary='Gets the occupancies of a subject for the given time period.',
-        operation_description='Note : only users with the role `administrator`, or professors who are a teacher of the'
-                              ' subject should be able to access this route.',
+        operation_description='Note : only users with the role `administrator`, or professors who are a teacher of the '
+                              'subject should be able to access this route.',
         responses={
             200: Response(
                 description='Subject occupancies',
                 schema=Schema(
-                    title='SubjectOccupancies',
+                    title='Occupancies',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='success'),
-                        'occupancies': Schema(
-                            type=TYPE_OBJECT,
-                            properties={
-                                '05-01-2020': Schema(
-                                    type=TYPE_OBJECT,
-                                    properties={
-                                        'id': Schema(type=TYPE_INTEGER, example=166),
-                                        'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
-                                        'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
-                                        'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
-                                        'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
-                                        'start': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'end': Schema(type=TYPE_INTEGER, example=1587776227),
-                                        'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
-                                        'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
-                                        'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
-                                    },
-                                    required=[
-                                        'id',
-                                        'group_name',
-                                        'subject_name',
-                                        'teacher_name',
-                                        'start',
-                                        'end',
-                                        'occupancy_type',
-                                        'name',
-                                    ]
-                                )
-                            },
-                            required=[
-                                'status',
-                                'occupancies',
-                            ]
+                        'days': Schema(
+                            type=TYPE_ARRAY,
+                            items=Schema(
+                                type=TYPE_OBJECT,
+                                properties={
+                                    'date': Schema(type=TYPE_STRING, example='05-01-2020'),
+                                    'occupancies': Schema(
+                                        type=TYPE_ARRAY,
+                                        items=Schema(
+                                            type=TYPE_OBJECT,
+                                            properties={
+                                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                                'name': Schema(type=TYPE_STRING,
+                                                               example='Algorithmique TP Groupe 1'),
+                                            },
+                                            required=[
+                                                'id',
+                                                'group_name',
+                                                'subject_name',
+                                                'teacher_name',
+                                                'start',
+                                                'end',
+                                                'occupancy_type',
+                                                'name',
+                                            ]
+                                        ),
+                                    ),
+                                },
+                                required=['date', 'occupancies', ]
+                            )
                         ),
                     },
-                    required=['status', 'occupancies', ]
+                    required=['status', 'days', ]
                 )
             ),
             401: Response(
@@ -612,19 +626,19 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -636,7 +650,7 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -644,9 +658,27 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
         },
         tags=['Subjects', 'role-professor', ],
         manual_parameters=[
-            Parameter(name='start', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='end', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
-            Parameter(name='occupancies_per_day', in_=IN_QUERY, type=TYPE_INTEGER, required=True),
+            Parameter(
+                name='start',
+                description='Start timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False,
+            ),
+            Parameter(
+                name='end',
+                description='End timestamp of the occupancies',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
+            Parameter(
+                name='occupancies_per_day',
+                description='Pass 0 to return ALL the events',
+                in_=IN_QUERY,
+                type=TYPE_INTEGER,
+                required=False
+            ),
         ],
     )
     def get(self, request, subject_id):
@@ -703,7 +735,7 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -775,7 +807,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
         operation_summary='Adds new teachers to a subject using their IDs.',
         operation_description='Note : only users with the role `administrator` should be able to access this route.',
         responses={
-            200: Response(
+            201: Response(
                 description='Teachers added',
                 schema=Schema(
                     title='SimpleSuccessResponse',
@@ -799,7 +831,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -811,19 +843,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
-                schema=Schema(
-                    title='ErrorResponse',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
-                        'code': Schema(type=TYPE_STRING, enum=error_codes),
-                    },
-                    required=['status', 'code', ]
-                )
-            ),
-            422: Response(
-                description='Invalid data',
+                description='Invalid ID (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -892,7 +912,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -904,7 +924,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
+                description='Invalid ID (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -916,7 +936,8 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             422: Response(
-                description='Invalid data',
+                description='Less than one teacher in charge (code=`LastTeacherInSubject`)\nThe teacher is in charge '
+                            '(code=`TeacherInCharge`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -973,7 +994,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
         operation_description='Note : only users with the role `administrator` should be able to access this route. '
                               'This should trigger the re-organization of groups.',
         responses={
-            200: Response(
+            201: Response(
                 description='Groups added',
                 schema=Schema(
                     title='SimpleSuccessResponse',
@@ -997,7 +1018,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1009,19 +1030,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
-                schema=Schema(
-                    title='ErrorResponse',
-                    type=TYPE_OBJECT,
-                    properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
-                        'code': Schema(type=TYPE_STRING, enum=error_codes),
-                    },
-                    required=['status', 'code', ]
-                )
-            ),
-            422: Response(
-                description='Invalid data',
+                description='Invalid ID (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1069,7 +1078,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1081,7 +1090,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             404: Response(
-                description='Invalid ID(s)',
+                description='Invalid ID (code=`InvalidID`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1093,7 +1102,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             422: Response(
-                description='Invalid data',
+                description='This is the last group for this subject (code=`LastGroupInSubject`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1176,7 +1185,7 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
@@ -1255,7 +1264,7 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
             403: Response(
-                description='Insufficient rights (code=`InvalidCredentials`)',
+                description='Insufficient rights (code=`InsufficientAuthorization`)',
                 schema=Schema(
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
