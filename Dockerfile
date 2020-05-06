@@ -9,7 +9,3 @@ WORKDIR /scolendar
 ADD . /scolendar/
 
 RUN pip install -r requirements.txt
-
-COPY build_without_venv.sh /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
