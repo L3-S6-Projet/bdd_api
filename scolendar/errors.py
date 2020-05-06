@@ -22,4 +22,7 @@ error_codes = [
     "ClassOrGroupAlreadyOccupied",
     "InvalidOccupancyType",
     "EndBeforeStart",
+    "TeacherDoesNotTeach",
+    "IllegalOccupancyType",
+    "Unknown",
 ]

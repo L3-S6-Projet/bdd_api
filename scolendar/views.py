@@ -2,7 +2,7 @@ from scolendar.viewsets.auth_viewsets import AuthViewSet
 from scolendar.viewsets.class_viewsets import ClassViewSet, ClassDetailViewSet, ClassOccupancyViewSet
 from scolendar.viewsets.classroom_viewsets import ClassroomDetailViewSet, ClassroomOccupancyViewSet, ClassroomViewSet
 from scolendar.viewsets.occupancy_viewsets import OccupancyDetailViewSet, OccupancyViewSet
-from scolendar.viewsets.profile_viewsets import ProfileViewSet
+from scolendar.viewsets.profile_viewsets import ProfileViewSet, ProfileLastOccupancyEdit, ProfileICalFeed
 from scolendar.viewsets.student_viewsets import StudentDetailViewSet, StudentOccupancyDetailViewSet, \
     StudentSubjectDetailViewSet, StudentViewSet
 from scolendar.viewsets.subject_viewsets import SubjectDetailViewSet, SubjectOccupancyViewSet, SubjectTeacherViewSet, \
@@ -15,6 +15,8 @@ session = AuthViewSet.as_view()
 
 # Profile
 profile = ProfileViewSet.as_view()
+profile_occupancy_modifications = ProfileLastOccupancyEdit.as_view()
+profile_iCal_feed = ProfileICalFeed.as_view()
 
 # Teachers
 teachers = TeacherViewSet.as_view()
