@@ -12,7 +12,7 @@ django-recurrence==1.10.2
 djangorestframework==3.11.0
 djangorestframework-camel-case==1.1.2
 drf-yasg==1.17.1
-icalendar==4.0.5
+icalendar==4.0.6
 idna==2.9
 inflection==0.4.0
 itypes==1.2.0
