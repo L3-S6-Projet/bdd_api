@@ -14,7 +14,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext as _
 
 from .forms import UserChangeForm, UserCreationForm, AdminPasswordChangeForm
-from .models import Class, Subject, Group, Teacher, Student, Classroom, SubjectTeacher, Occupancy
+from .models import Class, Subject, Teacher, Student, Classroom, SubjectTeacher, Occupancy, StudentSubject
 
 
 @admin.register(Class)
@@ -37,10 +37,11 @@ class SubjectAdmin(admin.ModelAdmin):
     list_display = [
         '_class',
         'name',
+        'group_count',
     ]
 
     fieldsets = [
-        (None, {'fields': ['_class', 'name']})
+        (None, {'fields': ['_class', 'name', 'group_count', ]})
     ]
 
     search_fields = ('name',)
@@ -176,15 +177,19 @@ class UserAdmin(admin.ModelAdmin):
         return super().response_add(request, obj, post_url_continue)
 
 
+class StudentSubjectInLine(admin.TabularInline):
+    model = StudentSubject
+    extra = 1
+
+
 @admin.register(Student)
 class StudentAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password', '_class',)}),
         (_('Personal info'), {'fields': ('first_name', 'last_name', 'email',)}),
         (_('Permissions'), {
-            'fields': ('is_active', 'groups',),
+            'fields': ('is_active',),
         }),
-        (_('Groupes'), {'fields': ('student_groups',)}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined',)}),
     )
     add_fieldsets = (
@@ -194,9 +199,13 @@ class StudentAdmin(UserAdmin):
         }),
     )
     list_display = ('username', 'email', 'first_name', 'last_name', '_class')
-    list_filter = ('is_active', 'groups', '_class')
+    list_filter = ('is_active', '_class')
     search_fields = ('username', 'first_name', 'last_name', 'email', '_class')
-    filter_horizontal = ('groups', 'student_groups',)
+    filter_horizontal = ('groups',)
+
+    inlines = [
+        StudentSubjectInLine,
+    ]
 
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         if db_field.name == 'permissions':
@@ -254,19 +263,6 @@ class TeacherAdmin(UserAdmin):
     ]
 
 
-@admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
-    search_fields = ('subject', 'name',)
-    ordering = ('subject', 'name',)
-    filter_horizontal = ('permissions',)
-
-    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
-        if db_field.name == 'permissions':
-            qs = kwargs.get('queryset', db_field.remote_field.model.objects)
-            kwargs['queryset'] = qs.select_related('content_type')
-        return super().formfield_for_manytomany(db_field, request=request, **kwargs)
-
-
 @admin.register(Classroom)
 class ClassroomAdmin(admin.ModelAdmin):
     list_display = [
@@ -285,16 +281,17 @@ class ClassroomAdmin(admin.ModelAdmin):
 class OccupancyAdmin(admin.ModelAdmin):
     list_display = [
         'classroom',
-        'group',
+        'group_number',
         'subject',
         'teacher',
         'start_datetime',
         'duration',
         'occupancy_type',
+        'name',
     ]
 
     fieldsets = [
-        (None, {'fields': ['subject', 'teacher', 'occupancy_type', 'group', ], }),
+        (None, {'fields': ['subject', 'teacher', 'occupancy_type', 'group', 'name', ], }),
         (_('Localisation'), {'fields': ['classroom', ], }),
         (_('Date'), {'fields': ['start_datetime', 'duration', ], })
     ]

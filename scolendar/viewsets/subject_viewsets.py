@@ -42,6 +42,7 @@ class SubjectViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
                             items=Schema(
                                 type=TYPE_OBJECT,
                                 properties={
+                                    'id': Schema(type=TYPE_INTEGER, example=166),
                                     'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
                                     'name': Schema(type=TYPE_STRING, example='PPPE'),
                                 },

@@ -35,6 +35,7 @@ class Class(BaseGroup):  # registered
 class Subject(models.Model):  # registered
     _class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name=_('Classe'))
     name = models.CharField(max_length=255, verbose_name=_('Matière'))
+    group_count = models.PositiveIntegerField(verbose_name=_('Nombre de groupes'))
 
     def __str__(self):
         return f'{self._class}: {self.name}'
@@ -45,19 +46,8 @@ class Subject(models.Model):  # registered
         unique_together = [('_class', 'name',), ]
 
 
-class Group(BaseGroup):  # registered
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Matière'))
-
-    class Meta:
-        verbose_name = _('Groupe d\'UE')
-        verbose_name_plural = _('Groupes d\'UE')
-
-
 class Student(User):  # registered
     _class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name=_('Classe'))
-    student_groups = models.ManyToManyField(Group, verbose_name=_('Groupes'), blank=True,
-                                            help_text=_('Les groupes auxquels l\'étudiant appartient'),
-                                            related_name='student_list', related_query_name='student')
 
     def __init__(self, *args, **kwargs):
         super(Student, self).__init__(*args, **kwargs)
@@ -91,6 +81,16 @@ class Student(User):  # registered
     class Meta(User.Meta):
         verbose_name = _('Etudiant')
         verbose_name_plural = _('Etudiants')
+
+
+class StudentSubject(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Sujet'))
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name=_('Etudiant'))
+    group_number = models.PositiveIntegerField(verbose_name=_('Numéro de groupe'))
+
+    class Meta:
+        verbose_name = _('Répartition des étudiants en groupe')
+        verbose_name_plural = _('Répartitions des étudiants en groupes')
 
 
 class StudentClassTemp(models.Model):  # should not be registered
@@ -130,9 +130,8 @@ class SubjectTeacher(models.Model):  # registered
 
 
 class Occupancy(models.Model):  # registered
-    name = models.CharField(max_length=255, verbose_name=_('Nom'))
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, verbose_name=_('Salle'))
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, verbose_name=_('Groupe'), blank=True)
+    group_number = models.PositiveIntegerField(verbose_name=_('Numéro du groupe'), blank=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Matière'))
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name=_('Interevenant'), blank=True)
     start_datetime = models.DateTimeField(verbose_name=_('Date et Heure de début'), default=now,
@@ -140,6 +139,7 @@ class Occupancy(models.Model):  # registered
     duration = models.DurationField(verbose_name=_('Durée'), default=timedelta(days=0, hours=1, minutes=0, seconds=0),
                                     validators=[max_duration_validator])
     occupancy_type = models.CharField(max_length=4, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
+    name = models.CharField(max_length=255, verbose_name=_('Nom'))
 
     def save(self, *args, **kwargs):
         super(Occupancy, self).save(*args, **kwargs)
@@ -147,4 +147,4 @@ class Occupancy(models.Model):  # registered
     class Meta:
         verbose_name = _('Occupation')
         verbose_name_plural = _('Occupations')
-        unique_together = [('classroom', 'group', 'subject', 'teacher', 'start_datetime')]
+        unique_together = [('classroom', 'subject', 'teacher', 'start_datetime')]
