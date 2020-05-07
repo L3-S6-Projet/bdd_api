@@ -8,15 +8,12 @@ from django.utils.translation import gettext as _
 from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator
 
 levels = ['L1', 'L2', 'L3', 'M1', 'M2', ]
-
 level_list = [(x, _(x)) for x in levels]
 
 ranks = ['MACO', 'PROF', 'PRAG', 'PAST', 'ATER', 'MONI', ]
-
 rank_list = [(x, _(x)) for x in ranks]
 
 occupancy_list = ['CM', 'TD', 'TP', 'PROJ', 'ADM', 'EXT', ]
-
 occupancy_type_list = [(x, _(x)) for x in occupancy_list]
 
 
