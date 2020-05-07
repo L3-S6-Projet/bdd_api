@@ -1,6 +1,5 @@
 import random
 import string
-import sys
 from datetime import datetime
 
 from django.conf import settings
@@ -9,16 +8,6 @@ from rest_framework import serializers
 
 from conf.auth import MIN_PASSWORD_LENGTH
 from scolendar.models import Student, Class, Teacher, Classroom, Occupancy, Subject, SubjectTeacher
-
-try:
-    import typing  # noqa: F401
-
-    if sys.version_info >= (3, 4):
-        from .method_serializers_with_typing import MethodFieldExampleSerializer
-    else:
-        from .method_serializers_without_typing import MethodFieldExampleSerializer
-except ImportError:
-    from .method_serializers_without_typing import MethodFieldExampleSerializer
 
 
 ######################################################
