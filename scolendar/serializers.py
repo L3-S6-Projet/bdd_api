@@ -125,6 +125,7 @@ class ClassSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'level',
         ]
 
 

@@ -1,6 +1,8 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import Group as BaseGroup, User
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
@@ -32,7 +34,13 @@ class Class(BaseGroup):  # registered
 class Subject(models.Model):  # registered
     _class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name=_('Classe'))
     name = models.CharField(max_length=255, verbose_name=_('Matière'))
-    group_count = models.PositiveIntegerField(verbose_name=_('Nombre de groupes'))
+    group_count = models.PositiveIntegerField(
+        verbose_name=_('Nombre de groupes'),
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(100),
+        ]
+    )
 
     def __str__(self):
         return f'{self._class}: {self.name}'
@@ -83,7 +91,18 @@ class Student(User):  # registered
 class StudentSubject(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Sujet'))
     student = models.ForeignKey(Student, on_delete=models.CASCADE, verbose_name=_('Etudiant'))
-    group_number = models.PositiveIntegerField(verbose_name=_('Numéro de groupe'))
+    group_number = models.PositiveIntegerField(
+        verbose_name=_('Numéro de groupe'),
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(100),
+        ]
+    )
+
+    def clean(self):
+        super(StudentSubject, self).clean()
+        if self.group_number > self.subject.group_count:
+            raise ValidationError(_('Numéro de groupe invalide'))
 
     class Meta:
         verbose_name = _('Répartition des étudiants en groupe')

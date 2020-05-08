@@ -13,7 +13,13 @@ from scolendar.models import Student, Teacher
 class TokenHandlerMixin:
     @staticmethod
     def _get_token(request):
-        rec_token = request.META.get('HTTP_AUTHORIZATION')
+        received = request.META.get('HTTP_AUTHORIZATION')
+        if received is None:
+            raise AttributeError('Token error')
+        data = received.split(' ')
+        if data[0] != 'BEARER':
+            raise AttributeError('Token error')
+        rec_token = data[-1]
         return Token.objects.get(key=rec_token)
 
 

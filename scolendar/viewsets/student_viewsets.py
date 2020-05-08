@@ -5,18 +5,21 @@ from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRA
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
 from scolendar.models import Student, Class
-from scolendar.paginations import PaginationHandlerMixin, StudentResultSetPagination
+from scolendar.paginations import StudentResultSetPagination
 from scolendar.serializers import StudentCreationSerializer, StudentSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
 from scolendar.viewsets.common.schemas import teacher_list_schema, occupancies_schema
 
 
-class StudentViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
+class StudentViewSet(GenericAPIView, TokenHandlerMixin):
+    serializer_class = StudentSerializer
+    queryset = Student.objects.all().order_by('id')
     pagination_class = StudentResultSetPagination
 
     @swagger_auto_schema(
@@ -106,12 +109,19 @@ class StudentViewSet(APIView, PaginationHandlerMixin, TokenHandlerMixin):
             if not token.user.is_staff:
                 return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                    status=status.HTTP_401_UNAUTHORIZED)
-            queryset = Student.objects.all()
-            serializer = StudentSerializer(queryset, many=True)
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                result = self.get_paginated_response(serializer.data)
+                response = result.data
+            else:
+                serializer = self.get_serializer(queryset, many=True)
+                response = serializer.data
             data = {
                 'status': 'success',
-                'total': len(serializer.data),
-                'students': serializer.data,
+                'total': response['count'],
+                'students': response['results'],
             }
             return RF_Response(data)
         except Token.DoesNotExist:
