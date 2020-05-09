@@ -2,6 +2,7 @@ from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRA
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
@@ -117,6 +118,13 @@ class ClassroomViewSet(GenericAPIView, TokenHandlerMixin):
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                status=status.HTTP_401_UNAUTHORIZED)
+        except NotFound:
+            data = {
+                'status': 'success',
+                'total': len(self.get_queryset()),
+                'teachers': [],
+            }
+            return RF_Response(data)
 
     @swagger_auto_schema(
         operation_summary='Creates a new classroom.',
