@@ -1,5 +1,6 @@
 import json
 from datetime import time, timedelta
+from fractions import Fraction
 
 
 def __load() -> dict:
@@ -27,4 +28,8 @@ def max_duration() -> timedelta:
 
 
 def get_service_coefficients() -> dict:
-    return __load()['service_coefficients']
+    base_coefficients = __load()['service_coefficients']
+    coefficients = {}
+    for key in base_coefficients.keys():
+        coefficients[key] = float(Fraction(base_coefficients[key]))
+    return coefficients

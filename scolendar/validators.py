@@ -15,8 +15,14 @@ def class_name_validator(name: str):
 
 def start_datetime_validator(datetime_to_validate: datetime):
     start_time = conf.start_time()
-    if conf.start_time() > datetime_to_validate.time():
+    if start_time > datetime_to_validate.time():
         raise ValidationError(_(f'L\'établissement n\'ouvre pas avant {start_time.strftime("%H:%M")}'))
+
+
+def end_datetime_validator(datetime_to_validate: datetime):
+    end_time = conf.end_time()
+    if end_time < datetime_to_validate.time():
+        raise ValidationError(_(f'L\'établissement ferme à {end_time.strftime("%H:%M")}'))
 
 
 def max_duration_validator(duration_to_validate: timedelta):

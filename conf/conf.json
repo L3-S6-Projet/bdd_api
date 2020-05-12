@@ -14,8 +14,10 @@
     }
   },
   "service_coefficients": {
-    "cm": 1,
-    "td": 1.5,
-    "tp": 2
+    "CM": 1.5,
+    "TD": 1,
+    "TP": "2/3",
+    "PROJ": 1,
+    "ADM": 1
   }
 }

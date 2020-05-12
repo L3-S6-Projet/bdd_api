@@ -7,7 +7,8 @@ from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
 
-from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator
+from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator, \
+    end_datetime_validator
 
 levels = ['L1', 'L2', 'L3', 'M1', 'M2', ]
 level_list = [(x, _(x)) for x in levels]
@@ -154,12 +155,14 @@ class Occupancy(models.Model):  # registered
                                           validators=[start_datetime_validator])
     duration = models.DurationField(verbose_name=_('Durée'), default=timedelta(days=0, hours=1, minutes=0, seconds=0),
                                     validators=[max_duration_validator])
+    end_datetime = models.DateTimeField(verbose_name=_('Date et Heure de fin'), validators=[end_datetime_validator])
     occupancy_type = models.CharField(max_length=4, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
     name = models.CharField(max_length=255, verbose_name=_('Nom'))
     description = models.TextField(verbose_name=_('Description'))
     deleted = models.BooleanField(verbose_name=_('Supprimé'), default=False)
 
     def save(self, *args, **kwargs):
+        self.end_datetime = self.start_datetime + self.duration
         try:
             old_instance = Occupancy.objects.get(id=self.id)
             super(Occupancy, self).save(*args, **kwargs)
