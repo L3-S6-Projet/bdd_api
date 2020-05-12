@@ -18,6 +18,9 @@ rank_list = [(x, _(x)) for x in ranks]
 occupancy_list = ['CM', 'TD', 'TP', 'PROJ', 'ADM', 'EXT', ]
 occupancy_type_list = [(x, _(x)) for x in occupancy_list]
 
+modification_list = ['INSERT', 'EDIT', 'DELETE']
+modification_types_list = [(x, _(x)) for x in modification_list]
+
 
 class Class(BaseGroup):  # registered
     level = models.CharField(max_length=2, verbose_name=_('Niveau'), choices=level_list)
@@ -35,6 +38,7 @@ class Subject(models.Model):  # registered
     _class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name=_('Classe'))
     name = models.CharField(max_length=255, verbose_name=_('Matière'))
     group_count = models.PositiveIntegerField(
+        default=1,
         verbose_name=_('Nombre de groupes'),
         validators=[
             MinValueValidator(1),
@@ -54,24 +58,20 @@ class Subject(models.Model):  # registered
 class Student(User):  # registered
     _class = models.ForeignKey(Class, on_delete=models.CASCADE, verbose_name=_('Classe'))
 
-    def __init__(self, *args, **kwargs):
-        super(Student, self).__init__(*args, **kwargs)
-        self.__important_fields = ['_class']
-        for field in self.__important_fields:
-            setattr(self, '__original_%s' % field, getattr(self, field, None))
-
-    def has_changed(self):
-        for field in self.__important_fields:
-            orig = '__original_%s' % field
-            if getattr(self, orig) != getattr(self, field):
-                return True
-        return False
-
     def save(self, *args, **kwargs):
-        if self.has_changed():
-            if getattr(self, '__original_%s' % '_class', None) != self._class:
-                setattr(self, '__original_%s' % '_class', self._class)
-        super(Student, self).save(*args, **kwargs)
+        try:
+            old_instance = Student.objects.get(id=self.id)
+            super(Student, self).save(*args, **kwargs)
+            if old_instance._class != self._class:
+                temp = StudentClassTemp(student=self, class_to_remove=old_instance._class,
+                                        class_to_add=self._class)
+                temp.save()
+            return self
+        except Student.DoesNotExist:
+            super(Student, self).save(*args, **kwargs)
+            temp = StudentClassTemp(student=self, class_to_remove=None, class_to_add=self._class)
+            temp.save()
+            return self
 
     def __str__(self):
         if len(self.first_name) > 0 and len(self.last_name) > 0:
@@ -147,7 +147,7 @@ class SubjectTeacher(models.Model):  # registered
 
 class Occupancy(models.Model):  # registered
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, verbose_name=_('Salle'))
-    group_number = models.PositiveIntegerField(verbose_name=_('Numéro du groupe'), blank=True)
+    group_number = models.PositiveIntegerField(verbose_name=_('Numéro du groupe'), blank=True, null=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Matière'))
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, verbose_name=_('Interevenant'), blank=True)
     start_datetime = models.DateTimeField(verbose_name=_('Date et Heure de début'), default=now,
@@ -156,11 +156,52 @@ class Occupancy(models.Model):  # registered
                                     validators=[max_duration_validator])
     occupancy_type = models.CharField(max_length=4, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
     name = models.CharField(max_length=255, verbose_name=_('Nom'))
+    description = models.TextField(verbose_name=_('Description'))
+    deleted = models.BooleanField(verbose_name=_('Supprimé'), default=False)
 
     def save(self, *args, **kwargs):
-        super(Occupancy, self).save(*args, **kwargs)
+        try:
+            old_instance = Occupancy.objects.get(id=self.id)
+            super(Occupancy, self).save(*args, **kwargs)
+            if old_instance.deleted is False and self.deleted is False:
+                occupancy_modification = OccupancyModifications(
+                    occupancy=self,
+                    modification_type='EDIT',
+                    previous_start_datetime=old_instance.start_datetime,
+                    previous_duration=old_instance.duration,
+                    new_start_datetime=self.start_datetime,
+                    new_duration=self.duration
+                )
+                occupancy_modification.save()
+            elif old_instance.deleted is False and self.deleted is True:
+                occupancy_modification = OccupancyModifications(
+                    occupancy=self,
+                    modification_type='DELETE',
+                    previous_start_datetime=old_instance.start_datetime,
+                    previous_duration=old_instance.duration,
+                )
+                occupancy_modification.save()
+        except Occupancy.DoesNotExist:
+            super(Occupancy, self).save(*args, **kwargs)
+            occupancy_modification = OccupancyModifications(
+                occupancy=self,
+                modification_type='INSERT',
+                new_start_datetime=self.start_datetime,
+                new_duration=self.duration,
+            )
+            occupancy_modification.save()
 
     class Meta:
         verbose_name = _('Occupation')
         verbose_name_plural = _('Occupations')
         unique_together = [('classroom', 'subject', 'teacher', 'start_datetime')]
+
+
+class OccupancyModifications(models.Model):
+    occupancy = models.ForeignKey(Occupancy, on_delete=models.CASCADE, verbose_name=_('Occupation'))
+    modification_type = models.CharField(max_length=6, verbose_name=_('Type'), choices=modification_types_list)
+    previous_start_datetime = models.DateTimeField(verbose_name=_('Ancienne date de début'), blank=True, null=True)
+    previous_duration = models.DurationField(verbose_name=_('Ancienne durée'), blank=True, null=True)
+    new_start_datetime = models.DateTimeField(verbose_name=_('Nouvelle date de début'), blank=True, null=True)
+    new_duration = models.DurationField(verbose_name=_('Nouvelle durée'), blank=True, null=True)
+    modification_date = models.DateTimeField(verbose_name=_('Date de modification'), auto_now=True)

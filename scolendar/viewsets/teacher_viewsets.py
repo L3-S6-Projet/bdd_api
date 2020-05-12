@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from conf.conf import get_service_coefficients
 from scolendar.errors import error_codes
 from scolendar.models import Teacher, ranks
-from scolendar.paginations import StudentResultSetPagination
+from scolendar.paginations import TeacherResultSetPagination
 from scolendar.serializers import TeacherCreationSerializer, TeacherSerializer
 from scolendar.validators import phone_number_validator
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
@@ -23,7 +23,7 @@ from scolendar.viewsets.common.schemas import teacher_list_schema, occupancies_s
 class TeacherViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = TeacherSerializer
     queryset = Teacher.objects.all().order_by('id')
-    pagination_class = StudentResultSetPagination
+    pagination_class = TeacherResultSetPagination
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all teachers.',

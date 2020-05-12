@@ -58,7 +58,7 @@ class TeacherCreationSerializer(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Student
+        model = Teacher
         fields = [
             'id',
             'first_name',
@@ -189,6 +189,10 @@ class StudentSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'class_name': {'required': False, 'allow_null': True},
         }
+
+    @staticmethod
+    def get_class_name(obj):
+        return obj._class.name
 
 
 ######################################################

@@ -31,7 +31,9 @@ The folder containing the virtual environment should be named:
 
 Let PyCharm create it on Windows, and if you're on Linux, you should know how to do this anyway 😊
 
-The scripts should be run before starting the app. Thee following guide will show you how to add the proper script to run before build.
+The scripts can take a long time to run because premature optimization is the root of all evil. Just let it run, and don't panic.
+
+The scripts should be run before starting the app. The following guide will show you how to add the proper script to run before build.
 
 ### Run in a container
 The project can be run in a container.
