@@ -6,6 +6,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.models import Token
 
 from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator, \
     end_datetime_validator
@@ -120,6 +122,9 @@ class Classroom(models.Model):  # registered
     name = models.CharField(max_length=255, verbose_name=_('Nom'), unique=True)
     capacity = models.IntegerField(verbose_name=_('Capacité'))
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = _('Salle')
         verbose_name_plural = _('Salles')
@@ -141,8 +146,8 @@ class TeacherSubject(models.Model):  # registered
     in_charge = models.BooleanField(verbose_name=_('Responsable'), default=False)
 
     class Meta:
-        verbose_name = _('Enseignant d\'UE')
-        verbose_name_plural = _('Enseignants d\'UE')
+        verbose_name = _('Enseignement')
+        verbose_name_plural = _('Enseignements')
         unique_together = [('teacher', 'subject')]
 
 
@@ -167,7 +172,7 @@ class Occupancy(models.Model):  # registered
             old_instance = Occupancy.objects.get(id=self.id)
             super(Occupancy, self).save(*args, **kwargs)
             if old_instance.deleted is False and self.deleted is False:
-                occupancy_modification = OccupancyModifications(
+                occupancy_modification = OccupancyModification(
                     occupancy=self,
                     modification_type='EDIT',
                     previous_start_datetime=old_instance.start_datetime,
@@ -177,7 +182,7 @@ class Occupancy(models.Model):  # registered
                 )
                 occupancy_modification.save()
             elif old_instance.deleted is False and self.deleted is True:
-                occupancy_modification = OccupancyModifications(
+                occupancy_modification = OccupancyModification(
                     occupancy=self,
                     modification_type='DELETE',
                     previous_start_datetime=old_instance.start_datetime,
@@ -186,7 +191,7 @@ class Occupancy(models.Model):  # registered
                 occupancy_modification.save()
         except Occupancy.DoesNotExist:
             super(Occupancy, self).save(*args, **kwargs)
-            occupancy_modification = OccupancyModifications(
+            occupancy_modification = OccupancyModification(
                 occupancy=self,
                 modification_type='INSERT',
                 new_start_datetime=self.start_datetime,
@@ -200,7 +205,7 @@ class Occupancy(models.Model):  # registered
         unique_together = [('classroom', 'subject', 'teacher', 'start_datetime')]
 
 
-class OccupancyModifications(models.Model):
+class OccupancyModification(models.Model):
     occupancy = models.ForeignKey(Occupancy, on_delete=models.CASCADE, verbose_name=_('Occupation'))
     modification_type = models.CharField(max_length=6, verbose_name=_('Type'), choices=modification_types_list)
     previous_start_datetime = models.DateTimeField(verbose_name=_('Ancienne date de début'), blank=True, null=True)
@@ -208,3 +213,9 @@ class OccupancyModifications(models.Model):
     new_start_datetime = models.DateTimeField(verbose_name=_('Nouvelle date de début'), blank=True, null=True)
     new_duration = models.DurationField(verbose_name=_('Nouvelle durée'), blank=True, null=True)
     modification_date = models.DateTimeField(verbose_name=_('Date de modification'), auto_now=True)
+
+
+class ICalToken(Token):
+    class Meta:
+        verbose_name = _('Token iCal')
+        verbose_name_plural = _('Tokens iCal')

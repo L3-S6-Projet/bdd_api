@@ -5,4 +5,4 @@ class ScolendarConfig(AppConfig):
     name = 'scolendar'
 
     def ready(self):
-        pass
+        import scolendar.signals

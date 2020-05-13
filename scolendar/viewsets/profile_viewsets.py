@@ -9,7 +9,7 @@ from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
-from scolendar.models import occupancy_list
+from scolendar.models import occupancy_list, Student, OccupancyModification
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
 
 
@@ -107,7 +107,7 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                     title='ProfileRecentModification',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'status': Schema(type=TYPE_STRING, example='success'),
                         'modifications': Schema(
                             type=TYPE_ARRAY,
                             items=Schema(
@@ -131,7 +131,7 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                                             ),
                                             'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
                                             'occupancy_start': Schema(type=TYPE_INTEGER, example=1587987050),
-                                            'occupancy_ent': Schema(type=TYPE_INTEGER, example=1587987050),
+                                            'occupancy_end': Schema(type=TYPE_INTEGER, example=1587987050),
                                             'previous_occupancy_start': Schema(
                                                 description='Only for the edition modification_type',
                                                 type=TYPE_INTEGER,
@@ -143,7 +143,13 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                                                 example=1587987050
                                             ),
                                         },
-                                        required=[]
+                                        required=[
+                                            'subject_name',
+                                            'class_name',
+                                            'occupancy_type',
+                                            'occupancy_start',
+                                            'occupancy_end',
+                                        ]
                                     )
                                 },
                                 required=['modification_type', 'modification_timestamp', 'occupancy', ]
@@ -179,7 +185,39 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
         tags=['role-professor', 'role-student', ],
     )
     def get(self, request):
-        pass
+        try:
+            token = self._get_token(request)
+            if token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                student = Student.objects.get(id=token.user.id)
+                occ_modifications = OccupancyModification.objects.filter(
+                    occupancy__subject__studentsubject__student=student).order_by('-modification_date')[:25]
+                modifications = []
+                for occ in occ_modifications:
+                    occupancy = {
+                        'subject_name': occ.occupancy.subject.name if occ.occupancy.occupancy_type != 'EXT' else None,
+                        'class_name': occ.occupancy.subject._class if occ.occupancy.occupancy_type != 'EXT' else None,
+                        'occupancy_type': occ.occupancy.occupancy_type,
+                        'occupancy_start': occ.new_start_datetime.timestamp(),
+                        'occupancy_end': (occ.new_start_datetime + occ.new_duration).timestamp(),
+                    }
+                    if occ.modification_type == 'EDITION':
+                        occupancy['previous_occupancy_start'] = occ.previous_start_datetime.timestamp()
+                        occupancy['previous_occupancy_end'] = (
+                                occ.previous_start_datetime + occ.previous_duration).timestamp()
+                    modifications.append({
+                        'modification_type': occ.modification_type,
+                        'modification_timestamp': occ.modification_date.timestamp(),
+                        'occupancy': occupancy
+                    })
+                return RF_Response({'status': 'success', 'modification': modifications})
+            except Student.DoesNotExist:
+                pass
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
 
 class ProfileICalFeed(APIView, TokenHandlerMixin):
@@ -227,4 +265,13 @@ class ProfileICalFeed(APIView, TokenHandlerMixin):
         tags=['role-professor', 'role-student']
     )
     def get(self, request):
-        pass
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            token, created = Token.objects.get_or_create(user=token.user)
+            return RF_Response({'status': 'success', 'url': f'{request.build_absolute_uri("/api/feeds/ical/")}{token}'})
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)

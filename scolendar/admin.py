@@ -26,8 +26,6 @@ class ClassAdmin(admin.ModelAdmin):
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         if db_field.name == 'permissions':
             qs = kwargs.get('queryset', db_field.remote_field.model.objects)
-            # Avoid a major performance hit resolving permission names which
-            # triggers a content_type load:
             kwargs['queryset'] = qs.select_related('content_type')
         return super().formfield_for_manytomany(db_field, request=request, **kwargs)
 
@@ -217,24 +215,9 @@ class StudentAdmin(UserAdmin):
         super(StudentAdmin, self).save_model(request, obj, form, change)
 
 
-class SubjectTeacherInLine(admin.TabularInline):
+class TeacherSubjectInLine(admin.TabularInline):
     model = TeacherSubject
     extra = 1
-
-
-@admin.register(TeacherSubject)
-class SubjectTeacherAdmin(admin.ModelAdmin):
-    list_display = [
-        'subject',
-        'teacher',
-        'in_charge',
-    ]
-
-    fieldsets = [
-        (None, {'fields': ['subject', 'teacher', 'in_charge', ], })
-    ]
-
-    search_fields = ('subject', 'teacher',)
 
 
 @admin.register(Teacher)
@@ -259,7 +242,7 @@ class TeacherAdmin(UserAdmin):
     filter_horizontal = ('groups',)
 
     inlines = [
-        SubjectTeacherInLine,
+        TeacherSubjectInLine,
     ]
 
 
@@ -280,20 +263,24 @@ class ClassroomAdmin(admin.ModelAdmin):
 @admin.register(Occupancy)
 class OccupancyAdmin(admin.ModelAdmin):
     list_display = [
+        'start_datetime',
+        'duration',
         'classroom',
         'group_number',
         'subject',
         'teacher',
-        'start_datetime',
-        'duration',
         'occupancy_type',
         'name',
+        'deleted',
     ]
 
     fieldsets = [
-        (None, {'fields': ['subject', 'teacher', 'occupancy_type', 'group', 'name', ], }),
+        (None, {'fields': ['subject', 'teacher', 'occupancy_type', 'name', 'group_number', ], }),
         (_('Localisation'), {'fields': ['classroom', ], }),
-        (_('Date'), {'fields': ['start_datetime', 'duration', ], })
+        (_('Date'), {'fields': ['start_datetime', 'duration', ], }),
+        (_('Supprimé'), {'fields': ['deleted', ]})
     ]
 
-    search_fields = ('group', 'subject', 'teacher', 'classroom',)
+    search_fields = ('group_number', 'subject', 'teacher', 'classroom',)
+
+    ordering = ['start_datetime', ]

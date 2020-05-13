@@ -1,5 +1,10 @@
+from datetime import datetime, timedelta
+
+from django.conf import settings
+from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_INTEGER, TYPE_STRING, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
+from pytz import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response as RF_Response
@@ -7,7 +12,6 @@ from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
 from scolendar.models import Classroom, Class, Occupancy
-from scolendar.serializers import OccupancySerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
 from scolendar.viewsets.common.schemas import occupancies_schema
 
@@ -90,13 +94,57 @@ class OccupancyViewSet(APIView, TokenHandlerMixin):
             if not token.user.is_staff:
                 return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                    status=status.HTTP_401_UNAUTHORIZED)
-            queryset = Occupancy.objects.all()
-            serializer = OccupancySerializer(queryset, many=True)
-            data = {
-                'status': 'success',
-                'occupancies': serializer.data,
-            }
-            return RF_Response(data)
+
+            def get_days() -> list:
+                start_timestamp = request.GET.get('start', None)
+                end_timestamp = request.GET.get('end', None)
+                nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+
+                days = []
+                occ = Occupancy.objects.filter(deleted=False).order_by('start_datetime').annotate(
+                    day=Trunc('start_datetime', 'day'))
+                if start_timestamp:
+                    occ = occ.filter(
+                        start_datetime__gte=datetime.fromtimestamp(
+                            int(start_timestamp),
+                            tz=timezone(settings.TIME_ZONE)
+                        )
+                    )
+                if end_timestamp:
+                    occ = occ.filter(
+                        end_datetime__lte=datetime.fromtimestamp(
+                            int(end_timestamp),
+                            tz=timezone(settings.TIME_ZONE)
+                        )
+                    )
+                for day in (occ[0].day + timedelta(n) for n in
+                            range((occ[len(occ) - 1].day - occ[0].day).days + 2)):
+                    day_occupancies = occ.filter(start_datetime__day=day.day)
+                    if len(day_occupancies) == 0:
+                        continue
+                    if nb_per_day != 0:
+                        day_occupancies = day_occupancies[:nb_per_day]
+                    occ_list = []
+                    for o in day_occupancies:
+                        event = {
+                            'id': o.id,
+                            'group_name': f'Groupe {o.group_number}',
+                            'subject_name': o.subject.name,
+                            'teacher_name': f'{o.teacher.first_name} {o.teacher.last_name}',
+                            'start': o.start_datetime.timestamp(),
+                            'end': o.end_datetime.timestamp(),
+                            'occupancy_type': o.occupancy_type,
+                            'name': o.name,
+                        }
+                        if o.subject:
+                            event['class_name'] = o.subject._class.name
+                        if o.classroom:
+                            event['classroom_name'] = o.classroom.name
+                        occ_list.append(event)
+                    days.append({'date': day.strftime("%d-%m-%Y"), 'occupancies': occ_list})
+                return days
+
+            return RF_Response({'status': 'success', 'days': get_days()})
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                status=status.HTTP_401_UNAUTHORIZED)

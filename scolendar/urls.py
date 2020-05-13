@@ -10,7 +10,7 @@ urlpatterns = [
     url(r'session$', session),
 
     url(r'profile$', profile),
-    url(r'profile/last-occupancies-moidifications', profile_occupancy_modifications),
+    url(r'profile/last-occupancies-modifications', profile_occupancy_modifications),
     url(r'profile/feeds/ical', profile_iCal_feed),
 
     url(r'teachers$', teachers),

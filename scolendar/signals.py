@@ -4,6 +4,10 @@ from django.dispatch import receiver
 from .models import Student, StudentClassTemp
 
 
+def maintain_import():
+    pass
+
+
 @receiver(post_save, sender=Student)
 def signal_student_class_group_post_save(sender, instance, update_fields=None, **kwargs):
     try:

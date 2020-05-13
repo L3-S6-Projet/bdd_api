@@ -282,10 +282,10 @@ class OccupancySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'classroom',
-            'group',
+            'group_number',
             'subject',
             'teacher',
-            'start_date',
+            'start_datetime',
             'duration',
             'occupancy_type',
         ]
