@@ -31,11 +31,28 @@ The folder containing the virtual environment should be named:
 
 Let PyCharm create it on Windows, and if you're on Linux, you should know how to do this anyway 😊
 
-The scripts can take a long time to run because premature optimization is the root of all evil. Just let it run, and don't panic.
+The scripts will take a long time to run because premature optimization is the root of all evil. Just let it run, and don't panic.
 
 The scripts should be run before starting the app. The following guide will show you how to add the proper script to run before build.
 
+#### Run from command line
+When running from command line, be sure to run the proper script first.
+Then, run the command:
+```shell script
+python manage.py runserver 0:8000
+```
+Then open your browser and go to http://127.0.0.1:8000/swagger
+
+#### Run in PyCharm
+Configure a Django app with the following settings:
+![Django Run Config](readme_images/config.png)
+The required environment variables are:
+- PYTHONUNBUFFERED=1
+- DJANGO_SETTINGS_MODULE=enseign.settings
+
 ### Run in a container
+**THIS NEEDS TO BE FINISHED, DO NOT TRY IT**
+
 The project can be run in a container.
 You need to build it and then run it as usual.
 
