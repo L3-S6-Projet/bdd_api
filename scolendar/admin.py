@@ -52,7 +52,7 @@ class UserAdmin(admin.ModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    ordering = ('username',)
+    ordering = ('last_name', 'first_name',)
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
@@ -196,9 +196,9 @@ class StudentAdmin(UserAdmin):
             'fields': ('username', 'password1', 'password2', '_class',),
         }),
     )
-    list_display = ('username', 'email', 'first_name', 'last_name', '_class')
+    list_display = ('username', 'first_name', 'last_name', '_class')
     list_filter = ('is_active', '_class')
-    search_fields = ('username', 'first_name', 'last_name', 'email', '_class')
+    search_fields = ('username', 'first_name', 'last_name', '_class')
     filter_horizontal = ('groups',)
 
     inlines = [
@@ -236,7 +236,7 @@ class TeacherAdmin(UserAdmin):
             'fields': ('username', 'password1', 'password2',),
         }),
     )
-    list_display = ('username', 'email', 'first_name', 'last_name',)
+    list_display = ('username', 'first_name', 'last_name', 'email', 'phone_number',)
     list_filter = ('is_active',)
     search_fields = ('username', 'first_name', 'last_name', 'email',)
     filter_horizontal = ('groups',)

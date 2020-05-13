@@ -82,14 +82,6 @@ class Student(User):  # registered
             return self
         except Student.DoesNotExist:
             super(Student, self).save(*args, **kwargs)
-            """for subject in self._class.subject_set.all():
-                student_subject = StudentSubject(
-                    subject=subject,
-                    student=self,
-                )
-                student_subject.save()
-                from scolendar.groups import attribute_student_groups
-                attribute_student_groups(subject)"""
             temp = StudentClassTemp(student=self, class_to_remove=None, class_to_add=self._class)
             temp.save()
             return self
@@ -123,8 +115,13 @@ class StudentSubject(models.Model):
 
     def clean(self):
         super(StudentSubject, self).clean()
-        if self.group_number > self.subject.group_count:
-            raise ValidationError(_('Numéro de groupe invalide'))
+        if self.group_number:
+            if self.group_number > self.subject.group_count or self.group_number <= 0:
+                raise ValidationError(_('Numéro de groupe invalide'))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super(StudentSubject, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name = _('Répartition des étudiants en groupe')

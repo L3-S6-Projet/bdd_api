@@ -28,20 +28,29 @@ def attribute_group_to_student(instance, created=False, **kwargs):
             student_subject.save()
             from scolendar.groups import attribute_student_groups
             attribute_student_groups(subject)
-        for subject in instance._class.subject_set.all():
-            student_subject = StudentSubject(
-                subject=subject,
-                student=instance,
-            )
-            student_subject.save()
-            from scolendar.groups import attribute_student_groups
-            attribute_student_groups(subject)
     return instance
 
 
 @receiver(post_delete, sender=Student)
-def student_group_reorganization(sender, instance, update_fields=None, **kwargs):
-    subjects = Subject.objects.filter(_class=instance._class)
+@receiver(post_delete, sender=StudentSubject)
+def student_group_reorganization(sender, instance, **kwargs):
+    if sender is Student:
+        subjects = Subject.objects.filter(_class=instance._class)
+    elif sender is StudentSubject:
+        subjects = Subject.objects.filter(id=instance.id)
+    else:
+        return instance
     for s in subjects:
         from scolendar.groups import attribute_student_groups
         attribute_student_groups(s)
+    return instance
+
+
+@receiver(post_save, sender=StudentSubject)
+def student_group_reorganization_on_student_subject(instance, created=False, **kwargs):
+    if created:
+        subjects = Subject.objects.filter(id=instance.id)
+        for s in subjects:
+            from scolendar.groups import attribute_student_groups
+            attribute_student_groups(s)
+    return instance

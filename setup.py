@@ -9,8 +9,10 @@ from django.db.utils import IntegrityError
 from pytz import timezone
 
 from scolendar.groups import attribute_student_groups
-from scolendar.models import Student, Class, Teacher, Classroom, Subject, Occupancy
-from scolendar.signals import attribute_group_to_student, student_class_signal
+from scolendar.models import Student, Class, Teacher, Classroom, Subject, Occupancy, StudentSubject
+from scolendar.signals import attribute_group_to_student, student_class_signal, \
+    student_group_reorganization_on_student_subject
+import time
 
 User = get_user_model()
 occupancy_types = {
@@ -63,6 +65,9 @@ def create_students(_class: Class):
                 )
                 student.set_password('passwdtest')
                 student.save()
+                for subject in _class.subject_set.all():
+                    student_subject = StudentSubject(subject=subject, student=student)
+                    student_subject.save()
             except IntegrityError:
                 pass
 
@@ -125,6 +130,43 @@ def create_occupancy(start: int, end: int, name: str, description: str, teacher:
         pass
 
 
+def create_teachers_classrooms_subjects_occupancies():
+    with open('sample_data/occupancies.json') as f:
+        data = json.load(f)
+        for entry in data:
+            if entry['professor'] is None:
+                continue
+            professor = entry['professor'].split(' ', 1)
+            teacher_obj = create_teachers(f_name=professor[1], l_name=professor[0])
+            classroom_obj = create_classroom(entry['location'])
+            subject_obj = create_subject(entry['subject'], _class=_class)
+            create_occupancy(
+                start=entry['start'],
+                end=entry['end'],
+                name=entry['name'],
+                description=entry['description'],
+                teacher=teacher_obj,
+                classroom=classroom_obj,
+                subject=subject_obj,
+                occ_type=entry['type']
+            )
+
+
+def disconnect_triggers():
+    post_save.disconnect(receiver=attribute_group_to_student, sender=Student)
+    post_save.disconnect(receiver=student_class_signal, sender=Student)
+    post_save.disconnect(receiver=student_group_reorganization_on_student_subject, sender=StudentSubject)
+
+
+def attribute_subject_groups():
+    for s in Subject.objects.all():
+        attribute_student_groups(s)
+
+
+start_time = time.time()
+print()
+print('Disconnecting signals')
+disconnect_triggers()
 print()
 print('Creating super')
 create_super()
@@ -136,33 +178,12 @@ print('Creating classes')
 _class = create_class()
 print()
 print('Creating teachers, classrooms, subjects and occupancies')
-with open('sample_data/occupancies.json') as f:
-    data = json.load(f)
-    for entry in data:
-        if entry['professor'] is None:
-            continue
-        professor = entry['professor'].split(' ', 1)
-        teacher_obj = create_teachers(f_name=professor[1], l_name=professor[0])
-        classroom_obj = create_classroom(entry['location'])
-        subject_obj = create_subject(entry['subject'], _class=_class)
-        create_occupancy(
-            start=entry['start'],
-            end=entry['end'],
-            name=entry['name'],
-            description=entry['description'],
-            teacher=teacher_obj,
-            classroom=classroom_obj,
-            subject=subject_obj,
-            occ_type=entry['type']
-        )
-
+create_teachers_classrooms_subjects_occupancies()
 print()
-print('Disconnecting student related triggers')
-post_save.disconnect(receiver=attribute_group_to_student, sender=Student)
-post_save.disconnect(receiver=student_class_signal, sender=Student)
 print('Creating students')
 create_students(_class)
 print()
 print('Attributing groups to students')
-for s in Subject.objects.all():
-    attribute_student_groups(s)
+attribute_subject_groups()
+print("--- %s seconds ---" % (time.time() - start_time))
+exit(0)
