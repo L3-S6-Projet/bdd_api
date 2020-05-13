@@ -3,10 +3,14 @@ from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
 from django.db.utils import IntegrityError
 from pytz import timezone
 
+from scolendar.groups import attribute_student_groups
 from scolendar.models import Student, Class, Teacher, Classroom, Subject, Occupancy
+from scolendar.signals import attribute_group_to_student, student_class_signal
 
 User = get_user_model()
 occupancy_types = {
@@ -50,6 +54,7 @@ def create_students(_class: Class):
         for student_entry in student_json:
             f_name = student_entry['first_name']
             l_name = student_entry['last_name']
+            print(f'Creating student: {f_name} {l_name}')
             try:
                 student = Student(
                     username=f'{f_name.lower().replace(" ", "")}.{l_name.lower().replace(" ", "")}',
@@ -117,12 +122,21 @@ def create_occupancy(start: int, end: int, name: str, description: str, teacher:
         occupancy.save()
     except IntegrityError:
         pass
+    except ValidationError:
+        pass
 
 
+print()
+print('Creating super')
 create_super()
+print()
+print('Creating admin')
 create_admin()
+print()
+print('Creating classes')
 _class = create_class()
-create_students(_class)
+print()
+print('Creating teachers, classrooms, subjects and occupancies')
 with open('sample_data/occupancies.json') as f:
     data = json.load(f)
     for entry in data:
@@ -142,3 +156,14 @@ with open('sample_data/occupancies.json') as f:
             subject=subject_obj,
             occ_type=entry['type']
         )
+
+print()
+print('Disconnecting student related triggers')
+post_save.disconnect(receiver=attribute_group_to_student, sender=Student)
+post_save.disconnect(receiver=student_class_signal, sender=Student)
+print('Creating students')
+create_students(_class)
+print()
+print('Attributing groups to students')
+for s in Subject.objects.all():
+    attribute_student_groups(s)

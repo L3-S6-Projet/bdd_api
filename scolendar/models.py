@@ -9,8 +9,8 @@ from django.utils.translation import gettext as _
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.models import Token
 
-from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, class_name_validator, \
-    end_datetime_validator
+from .validators import start_datetime_validator, max_duration_validator, phone_number_validator, \
+    class_name_validator, end_datetime_validator
 
 levels = ['L1', 'L2', 'L3', 'M1', 'M2', ]
 level_list = [(x, _(x)) for x in levels]
@@ -52,6 +52,16 @@ class Subject(models.Model):  # registered
     def __str__(self):
         return f'{self._class}: {self.name}'
 
+    def save(self, *args, **kwargs):
+        try:
+            old_instance = Subject.objects.get(id=self.id)
+            super(Subject, self).save(*args, **kwargs)
+            if old_instance.group_count != self.group_count:
+                from scolendar.groups import attribute_student_groups
+                attribute_student_groups(self)
+        except Subject.DoesNotExist:
+            super(Subject, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name = _('Matière')
         verbose_name_plural = _('Matières')
@@ -72,6 +82,14 @@ class Student(User):  # registered
             return self
         except Student.DoesNotExist:
             super(Student, self).save(*args, **kwargs)
+            """for subject in self._class.subject_set.all():
+                student_subject = StudentSubject(
+                    subject=subject,
+                    student=self,
+                )
+                student_subject.save()
+                from scolendar.groups import attribute_student_groups
+                attribute_student_groups(subject)"""
             temp = StudentClassTemp(student=self, class_to_remove=None, class_to_add=self._class)
             temp.save()
             return self
@@ -99,7 +117,8 @@ class StudentSubject(models.Model):
         validators=[
             MinValueValidator(1),
             MaxValueValidator(100),
-        ]
+        ],
+        null=True
     )
 
     def clean(self):
@@ -114,7 +133,7 @@ class StudentSubject(models.Model):
 
 class StudentClassTemp(models.Model):  # should not be registered
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    class_to_remove = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='class_to_remove')
+    class_to_remove = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='class_to_remove', null=True)
     class_to_add = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='class_to_add')
 
 
