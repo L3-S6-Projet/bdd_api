@@ -7,7 +7,7 @@ from pytz import timezone
 from rest_framework import serializers
 
 from conf.auth import MIN_PASSWORD_LENGTH
-from scolendar.models import Student, Class, Teacher, Classroom, Occupancy, Subject, SubjectTeacher
+from scolendar.models import Student, Class, Teacher, Classroom, Occupancy, Subject, TeacherSubject
 
 
 ######################################################
@@ -213,9 +213,9 @@ class SubjectCreationSerializer(serializers.ModelSerializer):
         subject.save()
 
         try:
-            subject_teacher = SubjectTeacher.objects.get(teacher=teacher_in_charge, subject=subject)
-        except SubjectTeacher.DoesNotExist:
-            subject_teacher = SubjectTeacher(teacher=teacher_in_charge, subject=subject)
+            subject_teacher = TeacherSubject.objects.get(teacher=teacher_in_charge, subject=subject)
+        except TeacherSubject.DoesNotExist:
+            subject_teacher = TeacherSubject(teacher=teacher_in_charge, subject=subject)
 
         subject_teacher.in_charge = True
         subject_teacher.save()

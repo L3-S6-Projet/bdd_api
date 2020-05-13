@@ -135,7 +135,7 @@ class Teacher(User):  # registered
         verbose_name_plural = _('Intervenants')
 
 
-class SubjectTeacher(models.Model):  # registered
+class TeacherSubject(models.Model):  # registered
     teacher = models.OneToOneField(Teacher, on_delete=models.CASCADE, verbose_name=_('Intervenant'), primary_key=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, verbose_name=_('Matière'))
     in_charge = models.BooleanField(verbose_name=_('Responsable'), default=False)
@@ -158,7 +158,7 @@ class Occupancy(models.Model):  # registered
     end_datetime = models.DateTimeField(verbose_name=_('Date et Heure de fin'), validators=[end_datetime_validator])
     occupancy_type = models.CharField(max_length=4, verbose_name=_('Type'), choices=occupancy_type_list, default='CM')
     name = models.CharField(max_length=255, verbose_name=_('Nom'))
-    description = models.TextField(verbose_name=_('Description'))
+    description = models.TextField(verbose_name=_('Description'), default='')
     deleted = models.BooleanField(verbose_name=_('Supprimé'), default=False)
 
     def save(self, *args, **kwargs):

@@ -1,6 +1,11 @@
+from datetime import datetime, timedelta
+
+from django.conf import settings
+from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, \
     TYPE_BOOLEAN, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
+from pytz import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
@@ -11,7 +16,7 @@ from rest_framework.views import APIView
 from scolendar.errors import error_codes
 from scolendar.exceptions import TeacherInChargeError
 from scolendar.models import Student, Teacher, occupancy_list, Classroom, Class, Subject, \
-    SubjectTeacher
+    TeacherSubject, Occupancy
 from scolendar.paginations import SubjectResultSetPagination
 from scolendar.serializers import OccupancyCreationSerializer, SubjectSerializer, SubjectCreationSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
@@ -429,27 +434,47 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
             try:
                 subject = Student.objects.get(id=subject_id)
 
-                def get_teachers() -> list:
+                # TODO check this shit
+                def get_subject_teachers() -> list:
                     teachers = []
-                    # TODO so much shit...
+                    teacher_subjects = TeacherSubject.objects.filter(subject=subject)
+                    for t in teacher_subjects:
+                        teachers.append(
+                            {
+                                'first_name': t.teacher.first_name,
+                                'last_name': t.teacher.last_name,
+                                'in_charge': t.in_charge,
+                                'email': t.teacher.email,
+                                'phone_number': t.teacher.phone_number,
+                            }
+                        )
                     return teachers
 
-                def get_groups() -> list:
+                def get_subject_groups() -> list:
                     groups = []
-                    # TODO too much shit...
+                    for i in range(1, subject.group_count + 1):
+                        groups.append(
+                            {
+                                'name': f'Groupe {i}',
+                                'count': 0,
+                                'is_student_group': i == subject.group_number
+                            }
+                        )
                     return groups
 
                 def count_hours() -> int:
                     total = 0
-                    # TODO well...
+                    occupancies = Occupancy.objects.get(subject=subject)
+                    for occ in occupancies:
+                        total += occ.duration.seconds / 3600.
                     return total
 
                 subject = {
                     'name': subject.name,
                     'class_name': subject._class.name,
                     'total_hours': count_hours(),
-                    'teachers': get_teachers(),
-                    'groups': get_groups()
+                    'teachers': get_subject_teachers(),
+                    'groups': get_subject_groups()
                 }
                 return RF_Response({'status': 'success', 'subject': subject})
             except Student.DoesNotExist:
@@ -562,14 +587,14 @@ class SubjectDetailViewSet(APIView, TokenHandlerMixin):
                     try:
                         new_teacher_in_charge = Teacher.objects.get(id=data['teacher_in_charge_id'])
                         try:
-                            subject_teacher = SubjectTeacher.objects.get(subject_id=subject.id, in_charge=True)
+                            subject_teacher = TeacherSubject.objects.get(subject_id=subject.id, in_charge=True)
                             subject_teacher.in_charge = False
-                        except SubjectTeacher.DoesNotExist:
+                        except TeacherSubject.DoesNotExist:
                             pass
                         try:
-                            subject_teacher = SubjectTeacher.objects.get(teacher=new_teacher_in_charge, subject=subject)
-                        except SubjectTeacher.DoesNotExist:
-                            subject_teacher = SubjectTeacher(teacher=new_teacher_in_charge, subject=subject)
+                            subject_teacher = TeacherSubject.objects.get(teacher=new_teacher_in_charge, subject=subject)
+                        except TeacherSubject.DoesNotExist:
+                            subject_teacher = TeacherSubject(teacher=new_teacher_in_charge, subject=subject)
                         subject_teacher.in_charge = True
                         subject_teacher.save()
                     except Teacher.DoesNotExist:
@@ -664,16 +689,58 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
             try:
                 student = Subject.objects.get(id=subject_id)
 
-                def get_occupancies() -> dict:
-                    occupancies = {}
-                    # TODO crawling under so much shit
-                    return occupancies
+                def get_days() -> list:
+                    start_timestamp = request.GET.get('start', None)
+                    end_timestamp = request.GET.get('end', None)
+                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
 
-                response = {
-                    'status': 'success',
-                    'occupancies': get_occupancies(),
-                }
-                return RF_Response(response)
+                    days = []
+                    occ = Occupancy.objects.filter(
+                        subject__studentsubject__student=student,
+                        deleted=False
+                    ).order_by('start_datetime').annotate(day=Trunc('start_datetime', 'day'))
+                    if start_timestamp:
+                        occ = occ.filter(
+                            start_datetime__gte=datetime.fromtimestamp(
+                                int(start_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    if end_timestamp:
+                        occ = occ.filter(
+                            end_datetime__lte=datetime.fromtimestamp(
+                                int(end_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    for day in (occ[0].day + timedelta(n) for n in
+                                range((occ[len(occ) - 1].day - occ[0].day).days + 2)):
+                        day_occupancies = occ.filter(start_datetime__day=day.day)
+                        if len(day_occupancies) == 0:
+                            continue
+                        if nb_per_day != 0:
+                            day_occupancies = day_occupancies[:nb_per_day]
+                        occ_list = []
+                        for o in day_occupancies:
+                            event = {
+                                'id': o.id,
+                                'group_name': f'Groupe {o.group_number}',
+                                'subject_name': o.subject.name,
+                                'teacher_name': f'{o.teacher.first_name} {o.teacher.last_name}',
+                                'start': o.start_datetime.timestamp(),
+                                'end': o.end_datetime.timestamp(),
+                                'occupancy_type': o.occupancy_type,
+                                'name': o.name,
+                            }
+                            if o.subject:
+                                event['class_name'] = o.subject._class.name
+                            if o.classroom:
+                                event['classroom_name'] = o.classroom.name
+                            occ_list.append(event)
+                        days.append({'date': day.strftime("%d-%m-%Y"), 'occupancies': occ_list})
+                    return days
+
+                return RF_Response({'status': 'success', 'days': get_days()})
             except Student.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
@@ -850,7 +917,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
             try:
                 subject = Subject.objects.get(id=subject_id)
                 for post_id in request.data:
-                    subject_teacher = SubjectTeacher(subject=subject, teacher_id=post_id)
+                    subject_teacher = TeacherSubject(subject=subject, teacher_id=post_id)
                     subject_teacher.save()
             except Subject.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
@@ -943,11 +1010,11 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
                                    status=status.HTTP_401_UNAUTHORIZED)
 
             def remove_teacher_from_subject(teacher_id: int):
-                subject_teachers = SubjectTeacher.objects.filter(subject_id=subject_id)
+                subject_teachers = TeacherSubject.objects.filter(subject_id=subject_id)
                 if len(subject_teachers) <= 1:
                     raise TeacherInChargeError('Not enough teachers')
 
-                subject_teacher = SubjectTeacher.objects.get(teacher_id=teacher_id, subject_id=subject_id)
+                subject_teacher = TeacherSubject.objects.get(teacher_id=teacher_id, subject_id=subject_id)
                 if subject_teacher.in_charge:
                     raise TeacherInChargeError('Teacher is in charge')
                 subject_teacher.delete()
@@ -955,7 +1022,7 @@ class SubjectTeacherViewSet(APIView, TokenHandlerMixin):
             for post_id in request.data:
                 try:
                     remove_teacher_from_subject(post_id)
-                except SubjectTeacher.DoesNotExist:
+                except TeacherSubject.DoesNotExist:
                     return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
                 except TeacherInChargeError:
                     return RF_Response({'status': 'error', 'code': 'TeacherInCharge'},
@@ -979,7 +1046,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                     title='SimpleSuccessResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'status': Schema(type=TYPE_STRING, example='success'),
                     },
                     required=['status', ]
                 )
@@ -990,7 +1057,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'status': Schema(type=TYPE_STRING, example='success'),
                         'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
@@ -1002,7 +1069,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'status': Schema(type=TYPE_STRING, example='success'),
                         'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
@@ -1014,7 +1081,7 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, examplee='success'),
+                        'status': Schema(type=TYPE_STRING, example='success'),
                         'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
@@ -1024,8 +1091,22 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
         tags=['Subjects']
     )
     def post(self, request, subject_id):
-        # TODO Need specs
-        pass
+        # TODO check this shit
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                subject.group_count += 1
+                subject.save()
+                return RF_Response({'status': 'success'})
+            except Subject.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
     @swagger_auto_schema(
         operation_summary='Removes a group from a subject.',
@@ -1096,8 +1177,24 @@ class SubjectGroupViewSet(APIView, TokenHandlerMixin):
         tags=['Subjects']
     )
     def delete(self, request, subject_id):
-        # TODO Need specs
-        pass
+        # TODO check this shit
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                if subject.group_count == 1:
+                    return RF_Response({'status': 'error', 'code': 'LastGroupInSubject'})
+                subject.group_count -= 1
+                subject.save()
+                return RF_Response({'status': 'success'})
+            except Subject.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
 
 class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
@@ -1173,8 +1270,71 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
         ],
     )
     def get(self, request, subject_id, group_number):
-        # TODO
-        pass
+        try:
+            token = self._get_token(request)
+            if not token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                subject = Subject.objects.get(id=subject_id)
+
+                def get_days() -> list:
+                    start_timestamp = request.GET.get('start', None)
+                    end_timestamp = request.GET.get('end', None)
+                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                    days = []
+                    occ = Occupancy.objects.filter(
+                        subject=subject,
+                        group_number=group_number,
+                        deleted=False,
+                    ).order_by('start_datetime').annotate(day=Trunc('start_datetime', 'day'))
+                    if start_timestamp:
+                        occ = occ.filter(
+                            start_datetime__gte=datetime.fromtimestamp(
+                                int(start_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    if end_timestamp:
+                        occ = occ.filter(
+                            end_datetime__lte=datetime.fromtimestamp(
+                                int(end_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    for day in (occ[0].day + timedelta(n) for n in
+                                range((occ[len(occ) - 1].day - occ[0].day).days + 2)):
+                        day_occupancies = occ.filter(start_datetime__day=day.day)
+                        if len(day_occupancies) == 0:
+                            continue
+                        if nb_per_day != 0:
+                            day_occupancies = day_occupancies[:nb_per_day]
+                        occ_list = []
+                        for o in day_occupancies:
+                            event = {
+                                'id': o.id,
+                                'group_name': f'Groupe {o.group_number}',
+                                'subject_name': o.subject.name,
+                                'teacher_name': f'{o.teacher.first_name} {o.teacher.last_name}',
+                                'start': o.start_datetime.timestamp(),
+                                'end': o.end_datetime.timestamp(),
+                                'occupancy_type': o.occupancy_type,
+                                'name': o.name,
+                            }
+                            if o.subject:
+                                event['class_name'] = o.subject._class.name
+                            if o.classroom:
+                                event['classroom_name'] = o.classroom.name
+                            occ_list.append(event)
+                        days.append({'date': day.strftime("%d-%m-%Y"), 'occupancies': occ_list})
+                    return days
+
+                return RF_Response({'status': 'success', 'days': get_days()})
+            except Class.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
     @swagger_auto_schema(
         operation_summary='Creates a new occupancy for a given group of a subject.',
@@ -1248,8 +1408,55 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 )
             ),
         },
-        tags=['role-professor', ]
+        tags=['role-professor', ],
+        request_body=Schema(
+            title='OccupancyCreationRequest',
+            type=TYPE_OBJECT,
+            properties={
+                'classroom_id': Schema(type=TYPE_INTEGER, example=166),
+                'start': Schema(type=TYPE_INTEGER, example=166),
+                'end': Schema(type=TYPE_INTEGER, example=166),
+                'name': Schema(type=TYPE_STRING, example='new_password'),
+                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                'teacher_id': Schema(type=TYPE_INTEGER, example=166)
+            },
+            required=['classroom_id', 'start', 'end', 'name', 'occupancy_type', 'teacher_id', ]
+        )
     )
     def post(self, request, subject_id, group_number):
-        # TODO
-        pass
+        # TODO check this shit
+        try:
+            token = self._get_token(request)
+            try:
+                Teacher.objects.get(id=token.user.id)
+            except Teacher.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                data = request.data
+                classroom = Classroom.objects.get(id=data.classroom_id)
+                teacher = Teacher.objects.get(id=request.data.teacher_id)
+                start_datetime = datetime.fromtimestamp(data.start)
+                end_datetime = datetime.fromtimestamp(data.end)
+                occupancy = Occupancy(
+                    classroom=classroom,
+                    group_number=group_number,
+                    subject=subject,
+                    teacher=teacher,
+                    start_datetime=start_datetime,
+                    duration=end_datetime - start_datetime,
+                    occupancy_type=data.occupancy_type,
+                    name=data.name
+                )
+                occupancy.save()
+                return RF_Response({'status': 'success'})
+            except Subject.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            except Classroom.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+            except Teacher.DoesNotExist:
+                return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                               status=status.HTTP_401_UNAUTHORIZED)

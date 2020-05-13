@@ -14,7 +14,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext as _
 
 from .forms import UserChangeForm, UserCreationForm, AdminPasswordChangeForm
-from .models import Class, Subject, Teacher, Student, Classroom, SubjectTeacher, Occupancy, StudentSubject
+from .models import Class, Subject, Teacher, Student, Classroom, TeacherSubject, Occupancy, StudentSubject
 
 
 @admin.register(Class)
@@ -218,11 +218,11 @@ class StudentAdmin(UserAdmin):
 
 
 class SubjectTeacherInLine(admin.TabularInline):
-    model = SubjectTeacher
+    model = TeacherSubject
     extra = 1
 
 
-@admin.register(SubjectTeacher)
+@admin.register(TeacherSubject)
 class SubjectTeacherAdmin(admin.ModelAdmin):
     list_display = [
         'subject',

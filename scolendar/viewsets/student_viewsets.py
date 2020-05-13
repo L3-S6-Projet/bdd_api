@@ -1,8 +1,13 @@
+from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, \
     TYPE_BOOLEAN, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
+from pytz import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
@@ -11,7 +16,7 @@ from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
-from scolendar.models import Student, Class
+from scolendar.models import Student, Class, StudentSubject, Occupancy, TeacherSubject
 from scolendar.paginations import StudentResultSetPagination
 from scolendar.serializers import StudentCreationSerializer, StudentSerializer
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
@@ -427,11 +432,19 @@ class StudentDetailViewSet(APIView, TokenHandlerMixin):
                 student = Student.objects.get(id=student_id)
 
                 def get_subjects() -> list:
-                    services = []
-                    # TODO finish this shit
-                    return services
+                    subject_list = []
+                    student_subjects = StudentSubject.objects.filter(student=student)
+                    # TODO check this shit
+                    for s in student_subjects:
+                        subject_list.append(
+                            {
+                                'name': s.subject.name,
+                                'group': s.group_number,
+                            }
+                        )
+                    return subject_list
 
-                subject_list = get_subjects()
+                subjects = get_subjects()
 
                 def count_hours() -> int:
                     total = 0
@@ -442,7 +455,7 @@ class StudentDetailViewSet(APIView, TokenHandlerMixin):
                     'last_name': student.last_name,
                     'username': student.username,
                     'total_hours': count_hours(),
-                    'subjects': subject_list,
+                    'subjects': subjects,
                 }
                 return RF_Response({'status': 'success', 'student': student})
             except Student.DoesNotExist:
@@ -648,16 +661,58 @@ class StudentOccupancyDetailViewSet(APIView, TokenHandlerMixin):
             try:
                 student = Student.objects.get(id=teacher_id)
 
-                def get_occupancies() -> dict:
-                    occupancies = {}
-                    # TODO crawling under so much shit
-                    return occupancies
+                def get_days() -> list:
+                    start_timestamp = request.GET.get('start', None)
+                    end_timestamp = request.GET.get('end', None)
+                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
 
-                response = {
-                    'status': 'success',
-                    'occupancies': get_occupancies(),
-                }
-                return RF_Response(response)
+                    days = []
+                    occ = Occupancy.objects.filter(
+                        subject__studentsubject__student=student,
+                        deleted=False
+                    ).order_by('start_datetime').annotate(day=Trunc('start_datetime', 'day'))
+                    if start_timestamp:
+                        occ = occ.filter(
+                            start_datetime__gte=datetime.fromtimestamp(
+                                int(start_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    if end_timestamp:
+                        occ = occ.filter(
+                            end_datetime__lte=datetime.fromtimestamp(
+                                int(end_timestamp),
+                                tz=timezone(settings.TIME_ZONE)
+                            )
+                        )
+                    for day in (occ[0].day + timedelta(n) for n in
+                                range((occ[len(occ) - 1].day - occ[0].day).days + 2)):
+                        day_occupancies = occ.filter(start_datetime__day=day.day)
+                        if len(day_occupancies) == 0:
+                            continue
+                        if nb_per_day != 0:
+                            day_occupancies = day_occupancies[:nb_per_day]
+                        occ_list = []
+                        for o in day_occupancies:
+                            event = {
+                                'id': o.id,
+                                'group_name': f'Groupe {o.group_number}',
+                                'subject_name': o.subject.name,
+                                'teacher_name': f'{o.teacher.first_name} {o.teacher.last_name}',
+                                'start': o.start_datetime.timestamp(),
+                                'end': o.end_datetime.timestamp(),
+                                'occupancy_type': o.occupancy_type,
+                                'name': o.name,
+                            }
+                            if o.subject:
+                                event['class_name'] = o.subject._class.name
+                            if o.classroom:
+                                event['classroom_name'] = o.classroom.name
+                            occ_list.append(event)
+                        days.append({'date': day.strftime("%d-%m-%Y"), 'occupancies': occ_list})
+                    return days
+
+                return RF_Response({'status': 'success', 'days': get_days()})
             except Student.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
@@ -746,25 +801,59 @@ class StudentSubjectDetailViewSet(APIView, TokenHandlerMixin):
         },
         tags=['Students', 'role-student', ]
     )
-    def get(self, request, teacher_id):
+    def get(self, request, student_id):
         try:
             token = self._get_token(request)
             if not token.user.is_staff:
                 return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                    status=status.HTTP_403_FORBIDDEN)
             try:
-                student = Student.objects.get(id=teacher_id)
+                student = Student.objects.get(id=student_id)
 
                 def get_subjects() -> list:
-                    subjects = []
-                    # TODO some much shit to finish
-                    return subjects
+                    subject_list = []
+                    student_subjects = StudentSubject.objects.filter(student=student)
+                    for ss in student_subjects:
+                        # TODO check this shit
+                        def get_subject_teachers() -> list:
+                            teachers = []
+                            teacher_subjects = TeacherSubject.objects.filter(subject=ss.subject)
+                            for t in teacher_subjects:
+                                teachers.append(
+                                    {
+                                        'first_name': t.teacher.first_name,
+                                        'last_name': t.teacher.last_name,
+                                        'in_charge': t.in_charge,
+                                        'email': t.teacher.email,
+                                        'phone_number': t.teacher.phone_number,
+                                    }
+                                )
+                            return teachers
 
-                response = {
-                    'status': 'success',
-                    'subjects': get_subjects(),
-                }
-                return RF_Response(response)
+                        def get_subject_groups() -> list:
+                            groups = []
+                            for i in range(1, ss.subject.group_count + 1):
+                                groups.append(
+                                    {
+                                        'name': f'Groupe {i}',
+                                        'count': 0,
+                                        'is_student_group': i == ss.group_number
+                                    }
+                                )
+                            return groups
+
+                        subject_list.append(
+                            {
+                                'id': ss.subject.id,
+                                'name': ss.subject.name,
+                                'class_name': ss.subject._class.name,
+                                'teachers': get_subject_teachers(),
+                                'groups': get_subject_groups(),
+                            }
+                        )
+                    return subject_list
+
+                return RF_Response({'status': 'success', 'subjects': get_subjects(), })
             except Student.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:

@@ -14,6 +14,8 @@ occupancy_types = {
     'TD': 'TD',
     'TP': 'TP',
     'Projet': 'PROJ',
+    'Administration': 'ADM',
+    'External': 'EXT'
 }
 
 
