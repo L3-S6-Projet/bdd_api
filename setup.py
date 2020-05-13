@@ -54,7 +54,6 @@ def create_students(_class: Class):
         for student_entry in student_json:
             f_name = student_entry['first_name']
             l_name = student_entry['last_name']
-            print(f'Creating student: {f_name} {l_name}')
             try:
                 student = Student(
                     username=f'{f_name.lower().replace(" ", "")}.{l_name.lower().replace(" ", "")}',
