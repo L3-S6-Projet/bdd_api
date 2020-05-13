@@ -1,15 +1,11 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from .models import Student, StudentClassTemp
 
 
-def maintain_import():
-    pass
-
-
 @receiver(post_save, sender=Student)
-def signal_student_class_group_post_save(sender, instance, update_fields=None, **kwargs):
+def student_class_signal(sender, instance, update_fields=None, **kwargs):
     try:
         temp = StudentClassTemp.objects.get(student_id=instance.id)
         if temp.class_to_remove:
@@ -20,3 +16,8 @@ def signal_student_class_group_post_save(sender, instance, update_fields=None, *
         temp.delete()
     except StudentClassTemp.DoesNotExist:
         return instance
+
+
+@receiver(post_delete, sender=Student)
+def student_group_reorganization(sender, instance, update_fields=None, **kwargs):
+    pass

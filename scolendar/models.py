@@ -166,12 +166,53 @@ class Occupancy(models.Model):  # registered
     description = models.TextField(verbose_name=_('Description'), default='')
     deleted = models.BooleanField(verbose_name=_('Supprimé'), default=False)
 
+    def clean(self):
+        super(Occupancy, self).clean()
+
+        def check(occupancies, error_message):
+            for occ in occupancies:
+                if occ.id == self.id:
+                    continue
+                latest_start = max(self.start_datetime, occ.start_datetime)
+                earliest_end = min(self.end_datetime, occ.end_datetime)
+                delta = (earliest_end - latest_start).days + 1
+                overlap = max(0, delta)
+                if overlap > 0:
+                    raise ValidationError(error_message)
+
+        def check_room_occupied():
+            if self.classroom:
+                occupancies = Occupancy.objects.filter(classroom=self.classroom, deleted=False,
+                                                       start_datetime__day=self.start_datetime.day)
+                check(occupancies, _('Cette salle est déjà réservée'))
+
+        def check_teacher_occupied():
+            occupancies = Occupancy.objects.filter(teacher=self.teacher, deleted=False,
+                                                   start_datetime__day=self.start_datetime.day)
+            check(occupancies, _('L\'enseignant est déjà occupé'))
+
+        def check_group_occupied():
+            if self.group_number:
+                occupancies = Occupancy.objects.filter(group_number=self.group_number, deleted=False,
+                                                       start_datetime__day=self.start_datetime.day)
+                check(occupancies, _('Ce groupe est déjà occupé'))
+            else:
+                occupancies = Occupancy.objects.filter(subject___class=self.subject._class, deleted=False,
+                                                       start_datetime__day=self.start_datetime.day)
+                check(occupancies, _('Cette classe est déjà occupée'))
+
+        # TODO check if one student is in another group which is occupied
+        check_room_occupied()
+        check_teacher_occupied()
+        check_group_occupied()
+
     def save(self, *args, **kwargs):
         self.end_datetime = self.start_datetime + self.duration
+        self.clean()
         try:
             old_instance = Occupancy.objects.get(id=self.id)
             super(Occupancy, self).save(*args, **kwargs)
-            if old_instance.deleted is False and self.deleted is False:
+            if not old_instance.deleted and not self.deleted:
                 occupancy_modification = OccupancyModification(
                     occupancy=self,
                     modification_type='EDIT',
@@ -181,7 +222,7 @@ class Occupancy(models.Model):  # registered
                     new_duration=self.duration
                 )
                 occupancy_modification.save()
-            elif old_instance.deleted is False and self.deleted is True:
+            elif not old_instance.deleted and self.deleted:
                 occupancy_modification = OccupancyModification(
                     occupancy=self,
                     modification_type='DELETE',
