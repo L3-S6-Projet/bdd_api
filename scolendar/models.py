@@ -53,14 +53,22 @@ class Subject(models.Model):  # registered
         return f'{self._class}: {self.name}'
 
     def save(self, *args, **kwargs):
+        from scolendar.groups import attribute_student_groups
         try:
             old_instance = Subject.objects.get(id=self.id)
             super(Subject, self).save(*args, **kwargs)
             if old_instance.group_count != self.group_count:
-                from scolendar.groups import attribute_student_groups
                 attribute_student_groups(self)
         except Subject.DoesNotExist:
             super(Subject, self).save(*args, **kwargs)
+            from django.db.models.signals import post_save
+            from scolendar.signals import student_group_reorganization_on_student_subject
+            post_save.disconnect(receiver=student_group_reorganization_on_student_subject, sender=StudentSubject)
+            for student in Student.objects.filter(_class=self._class):
+                student_subject = StudentSubject(student=student, subject=self)
+                student_subject.save()
+            attribute_student_groups(self)
+            post_save.connect(receiver=student_group_reorganization_on_student_subject, sender=StudentSubject)
 
     class Meta:
         verbose_name = _('Matière')
@@ -126,6 +134,7 @@ class StudentSubject(models.Model):
     class Meta:
         verbose_name = _('Répartition des étudiants en groupe')
         verbose_name_plural = _('Répartitions des étudiants en groupes')
+        unique_together = [('subject', 'student',), ]
 
 
 class StudentClassTemp(models.Model):  # should not be registered

@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
@@ -21,13 +22,16 @@ def student_class_signal(instance, created=False, **kwargs):
 def attribute_group_to_student(instance, created=False, **kwargs):
     if created:
         for subject in instance._class.subject_set.all():
-            student_subject = StudentSubject(
-                subject=subject,
-                student=instance,
-            )
-            student_subject.save()
-            from scolendar.groups import attribute_student_groups
-            attribute_student_groups(subject)
+            try:
+                student_subject = StudentSubject(
+                    subject=subject,
+                    student=instance,
+                )
+                student_subject.save()
+                from scolendar.groups import attribute_student_groups
+                attribute_student_groups(subject)
+            except IntegrityError:
+                continue
     return instance
 
 

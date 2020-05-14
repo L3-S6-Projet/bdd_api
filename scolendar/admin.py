@@ -14,7 +14,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext as _
 
 from .forms import UserChangeForm, UserCreationForm, AdminPasswordChangeForm
-from .models import Class, Subject, Teacher, Student, Classroom, TeacherSubject, Occupancy, StudentSubject
+from .models import Class, Subject, Teacher, Student, Classroom, TeacherSubject, Occupancy, StudentSubject, ICalToken
 
 
 @admin.register(Class)
@@ -284,3 +284,10 @@ class OccupancyAdmin(admin.ModelAdmin):
     search_fields = ('group_number', 'subject', 'teacher', 'classroom',)
 
     ordering = ['start_datetime', ]
+
+
+@admin.register(ICalToken)
+class ICalTokenAdmin(admin.ModelAdmin):
+    list_display = [
+        'key'
+    ]
