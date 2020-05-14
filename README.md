@@ -62,7 +62,7 @@ docker build --tag scolendar:1.0 .
 
 Once the build is done, you can run the container with the following command:
 ```shell script
-docker run --publish 8000:8000 --name scolendar scolendar:1.0
+docker run --publish 8000:8000 --detach --name scolendar scolendar:1.0
 ```
 
 ## Use the API
