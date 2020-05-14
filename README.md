@@ -53,13 +53,16 @@ The required environment variables are:
 - DJANGO_SETTINGS_MODULE=enseign.settings
 
 ### Run in a container
-**THIS NEEDS TO BE FINISHED, DO NOT TRY IT**
-
 The project can be run in a container.
-You need to build it and then run it as usual.
 
+You first need to build the container:
 ```shell script
-docker-compose up
+docker build --tag scolendar:1.0 .
+```
+
+Once the build is done, you can run the container with the following command:
+```shell script
+docker run --publish 8000:8000 --name scolendar scolendar:1.0
 ```
 
 ## Use the API
