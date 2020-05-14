@@ -9,6 +9,8 @@
   * [Supported platforms](#supported-platforms)
   * [How to start the server](#how-to-start-the-server)
     + [Run locally](#run-locally)
+        - [Run from command line](#run-from-command-line)
+        - [Run in PyCharm](#run-in-pycharm)
     + [Run in a container](#run-in-a-container)
   * [Use the API](#use-the-api)
 
