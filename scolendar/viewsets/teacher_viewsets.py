@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 
 from conf.conf import get_service_coefficients
 from scolendar.errors import error_codes
+from scolendar.groups import group_size
 from scolendar.models import Teacher, ranks, Occupancy, TeacherSubject
 from scolendar.paginations import TeacherResultSetPagination
 from scolendar.serializers import TeacherCreationSerializer, TeacherSerializer
@@ -910,7 +911,7 @@ class TeacherSubjectDetailViewSet(APIView, TokenHandlerMixin):
                                     {
                                         'number': i,
                                         'name': f'Groupe {i}',
-                                        'count': 0,
+                                        'count': group_size(i),
                                     }
                                 )
                             return groups
