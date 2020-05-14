@@ -67,7 +67,7 @@ All test users have the same password : `passwdtest`.
 Their usernames are:
 - Super user: `super`
 - Admin: `admin`
-- Student: same as in test server
-- Teacher: same as in test server
+- Student: same as in test server `{first_name}.{last_name}`
+- Teacher: same as in test server `{first_name}.{last_name}`
 
 A default class is also created: `L3 Informatique`.
