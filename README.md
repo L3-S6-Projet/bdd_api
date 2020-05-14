@@ -70,4 +70,6 @@ Their usernames are:
 - Student: same as in test server `{first_name}.{last_name}`
 - Teacher: same as in test server `{first_name}.{last_name}`
 
+**All default usernames do not contain special characters.**
+
 A default class is also created: `L3 Informatique`.
