@@ -46,11 +46,50 @@ python manage.py runserver 0:8000
 Then open your browser and go to http://127.0.0.1:8000/swagger
 
 #### Run in PyCharm
-Configure a Django app with the following settings:
-![Django Run Config](readme_images/config.png)
-The required environment variables are:
+##### Setup
+First, you need to install Python (3.7 is preferred since the code was written for this version).
+
+##### Cloning
+Clone the repository to your computer (using PyCharm or directly from command line).
+
+![Clone 1](readme_images/PyCharm/clone1.png)
+![Clone 2](readme_images/PyCharm/clone2.png)
+
+##### Interpreter setup
+One the project is cloned, you need to setup the Python Interpreter. Open the PyCharm settings. You will find the project setup details in that window.
+
+![Interpreter 1](readme_images/PyCharm/interpreter1.png)
+
+In this window, click on the small wheel and add a Python Interpreter
+
+![Interpreter 2](readme_images/PyCharm/interpreter2.png)
+
+Once the virtual environment is created, you should see the following window:
+
+![Interpreter 3](readme_images/PyCharm/interpreter3.png)
+
+Click "Apply", then "OK".
+
+##### Run configuration
+Open the run configurations edition window
+
+![Run 1](readme_images/PyCharm/run1.png)
+
+In this window, check the environment variables are set to the following values:
 - PYTHONUNBUFFERED=1
 - DJANGO_SETTINGS_MODULE=enseign.settings
+
+![Run 2](readme_images/PyCharm/run2.png)
+
+**An error still appears, which is normal at this step.**
+
+Click "Apply", then "OK".
+
+##### Script
+You can now run the script which will install all dependencies and initialize the database with test data.
+![Script 1](readme_images/PyCharm/script1.png)
+
+You can now click on the Run button to start the server and navigate to http://127.0.0.1:8000/swagger
 
 ### Run in a container
 The project can be run in a container.
