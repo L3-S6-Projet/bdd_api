@@ -9,7 +9,7 @@ from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
-from scolendar.models import occupancy_list, Student, OccupancyModification
+from scolendar.models import occupancy_list, Student, OccupancyModification, ICalToken
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
 
 
@@ -267,10 +267,10 @@ class ProfileICalFeed(APIView, TokenHandlerMixin):
     def get(self, request):
         try:
             token = self._get_token(request)
-            if not token.user.is_staff:
+            if token.user.is_staff:
                 return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
                                    status=status.HTTP_403_FORBIDDEN)
-            token, created = Token.objects.get_or_create(user=token.user)
+            token, created = ICalToken.objects.get_or_create(user=token.user)
             return RF_Response({'status': 'success', 'url': f'{request.build_absolute_uri("/api/feeds/ical/")}{token}'})
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},

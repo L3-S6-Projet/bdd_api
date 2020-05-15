@@ -1,5 +1,8 @@
+import binascii
+import os
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import Group as BaseGroup, User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -281,7 +284,25 @@ class OccupancyModification(models.Model):
     modification_date = models.DateTimeField(verbose_name=_('Date de modification'), auto_now=True)
 
 
-class ICalToken(Token):
+class ICalToken(models.Model):
+    key = models.CharField(_("Key"), max_length=40, primary_key=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, related_name='auth_i_cal_token',
+        on_delete=models.CASCADE, verbose_name=_("User")
+    )
+    created = models.DateTimeField(_("Created"), auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    def generate_key(self):
+        return binascii.hexlify(os.urandom(20)).decode()
+
+    def __str__(self):
+        return self.key
+
     class Meta:
         verbose_name = _('Token iCal')
         verbose_name_plural = _('Tokens iCal')

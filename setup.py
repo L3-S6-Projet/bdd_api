@@ -53,9 +53,11 @@ def create_class() -> Class:
 def create_students(_class: Class):
     with open('sample_data/students.json') as student_file:
         student_json = json.load(student_file)
+        subjects = _class.subject_set.all()
         for student_entry in student_json:
             f_name = student_entry['first_name']
             l_name = student_entry['last_name']
+            print(f'Creating Student: {f_name} {l_name}')
             try:
                 student = Student(
                     username=f'{f_name.lower().replace(" ", "")}.{l_name.lower().replace(" ", "")}',
@@ -65,7 +67,7 @@ def create_students(_class: Class):
                 )
                 student.set_password('passwdtest')
                 student.save()
-                for subject in _class.subject_set.all():
+                for subject in subjects:
                     student_subject = StudentSubject(subject=subject, student=student)
                     student_subject.save()
             except IntegrityError:
@@ -73,6 +75,7 @@ def create_students(_class: Class):
 
 
 def create_teachers(f_name: str, l_name: str) -> Teacher:
+    print(f'Creating Teacher: {f_name} {l_name}')
     try:
         teacher = Teacher(
             username=f'{f_name.lower().replace(" ", "")}.{l_name.lower().replace(" ", "")}',
@@ -160,6 +163,7 @@ def disconnect_triggers():
 
 def attribute_subject_groups():
     for s in Subject.objects.all():
+        print(f'Attributing groups for {s.name}')
         attribute_student_groups(s)
 
 

@@ -79,10 +79,16 @@ class AuthViewSet(ObtainAuthToken, TokenHandlerMixin):
             def get_user_type():
                 if user.is_staff:
                     return 'ADM'
-                elif Teacher.objects.get(id=user.id):
+                try:
+                    Teacher.objects.get(id=user.id)
                     return 'TEA'
-                elif Student.objects.get(id=user.id):
+                except Teacher.DoesNotExist:
+                    pass
+                try:
+                    Student.objects.get(id=user.id)
                     return 'STU'
+                except Student.DoesNotExist:
+                    pass
 
             token, created = Token.objects.get_or_create(user=user)
             response = {

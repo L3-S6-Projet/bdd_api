@@ -4,7 +4,7 @@ from scolendar.views import session, profile, profile_occupancy_modifications, p
     teachers_details, teacher_occupancies, teacher_subjects, classrooms, classroom_details, classrooms_occupancies, \
     class_, class_details, class_occupancies, students, students_details, students_occupancies, students_subjects, \
     subjects, subjects_details, subjects_occupancies, subjects_teachers, subjects_groups, subjects_groups_occupancies, \
-    occupancies, occupancies_details
+    occupancies, occupancies_details, i_cal_feed
 
 urlpatterns = [
     url(r'session$', session),
@@ -40,4 +40,6 @@ urlpatterns = [
 
     url(r'occupancies$', occupancies),
     url(r'occupancies/(?P<occupancy_id>[0-9]+)$', occupancies_details),
+
+    url(r'feeds/ical/(?P<token>[a-zA-Z0-9]+)$', i_cal_feed),
 ]
