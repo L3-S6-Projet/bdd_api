@@ -2,6 +2,9 @@ dist: xenial
 
 language: python
 
+services:
+  - postgresql
+
 python:
   - "3.6"
   - "3.7"
@@ -14,6 +17,7 @@ env:
   - DJANGO_VERSION=3.0.6
 
 before_script:
+  - psql -c 'create database scolendar;' -U postgres
   - python manage.py makemigrations
   - python manage.py migrate
 

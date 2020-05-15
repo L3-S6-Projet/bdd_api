@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, \
     TYPE_BOOLEAN, IN_QUERY
@@ -27,6 +28,17 @@ class SubjectViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = SubjectSerializer
     queryset = Subject.objects.all().order_by('id')
     pagination_class = SubjectResultSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.query_params.get('query', None)
+        if query:
+            if len(query) >= 3:
+                queryset = queryset.filter(
+                    Q(name__unaccent__icontains=query) |
+                    Q(_class__name__unaccent_lower__trigram_similar=query)
+                )
+        return queryset
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all subjects.',
@@ -690,9 +702,9 @@ class SubjectOccupancyViewSet(APIView, TokenHandlerMixin):
                 student = Subject.objects.get(id=subject_id)
 
                 def get_days() -> list:
-                    start_timestamp = request.GET.get('start', None)
-                    end_timestamp = request.GET.get('end', None)
-                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                    start_timestamp = request.query_params.get('start', None)
+                    end_timestamp = request.query_params.get('end', None)
+                    nb_per_day = int(request.query_params.get('occupancies_per_day', 0))
 
                     days = []
                     occ = Occupancy.objects.filter(
@@ -1279,9 +1291,9 @@ class SubjectGroupOccupancyViewSet(APIView, TokenHandlerMixin):
                 subject = Subject.objects.get(id=subject_id)
 
                 def get_days() -> list:
-                    start_timestamp = request.GET.get('start', None)
-                    end_timestamp = request.GET.get('end', None)
-                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                    start_timestamp = request.query_params.get('start', None)
+                    end_timestamp = request.query_params.get('end', None)
+                    nb_per_day = int(request.query_params.get('occupancies_per_day', 0))
                     days = []
                     occ = Occupancy.objects.filter(
                         subject=subject,

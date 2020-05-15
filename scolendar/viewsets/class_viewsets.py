@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
@@ -22,8 +23,18 @@ from scolendar.viewsets.common.schemas import occupancies_schema
 
 class ClassViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = ClassSerializer
-    queryset = Class.objects.all().order_by('id')
+    queryset = Class.objects.all()
     pagination_class = ClassResultSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.query_params.get('query', None)
+        if query:
+            if len(query) >= 3:
+                queryset = queryset.filter(
+                    Q(name__unaccent__icontains=query)
+                )
+        return queryset.order_by('id')
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all classes.',
@@ -586,9 +597,9 @@ class ClassOccupancyViewSet(APIView, TokenHandlerMixin):
                 _class = Class.objects.get(id=class_id)
 
                 def get_days() -> list:
-                    start_timestamp = request.GET.get('start', None)
-                    end_timestamp = request.GET.get('end', None)
-                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                    start_timestamp = request.query_params.get('start', None)
+                    end_timestamp = request.query_params.get('end', None)
+                    nb_per_day = int(request.query_params.get('occupancies_per_day', 0))
 
                     days = []
                     occ = Occupancy.objects.filter(

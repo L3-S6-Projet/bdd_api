@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models import Q
 from django.db.models.functions import Trunc
 from drf_yasg.openapi import Schema, Response, Parameter, TYPE_OBJECT, TYPE_ARRAY, TYPE_INTEGER, TYPE_STRING, IN_QUERY
 from drf_yasg.utils import swagger_auto_schema
@@ -39,6 +40,19 @@ class TeacherViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = TeacherSerializer
     queryset = Teacher.objects.all().order_by('id')
     pagination_class = TeacherResultSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.query_params.get('query', None)
+        if query:
+            if len(query) >= 3:
+                queryset = queryset.filter(
+                    Q(first_name__unaccent__icontains=query) |
+                    Q(last_name__unaccent__icontains=query) |
+                    Q(_class__name__unaccent__icontains=query) |
+                    Q(phone_number__unaccent__icontains=query)
+                )
+        return queryset
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all teachers.',
@@ -736,9 +750,9 @@ class TeacherOccupancyDetailViewSet(APIView, TokenHandlerMixin):
                 teacher = Teacher.objects.get(id=teacher_id)
 
                 def get_days() -> list:
-                    start_timestamp = request.GET.get('start', None)
-                    end_timestamp = request.GET.get('end', None)
-                    nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                    start_timestamp = request.query_params.get('start', None)
+                    end_timestamp = request.query_params.get('end', None)
+                    nb_per_day = int(request.query_params.get('occupancies_per_day', 0))
 
                     days = []
                     occ = Occupancy.objects.filter(

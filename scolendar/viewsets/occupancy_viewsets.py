@@ -96,9 +96,9 @@ class OccupancyViewSet(APIView, TokenHandlerMixin):
                                    status=status.HTTP_401_UNAUTHORIZED)
 
             def get_days() -> list:
-                start_timestamp = request.GET.get('start', None)
-                end_timestamp = request.GET.get('end', None)
-                nb_per_day = int(request.GET.get('occupancies_per_day', 0))
+                start_timestamp = request.query_params.get('start', None)
+                end_timestamp = request.query_params.get('end', None)
+                nb_per_day = int(request.query_params.get('occupancies_per_day', 0))
 
                 days = []
                 occ = Occupancy.objects.filter(deleted=False).order_by('start_datetime').annotate(

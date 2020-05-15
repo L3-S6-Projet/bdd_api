@@ -1,11 +1,20 @@
-version: '3.3'
+version: '3.1'
 
 services:
-  web:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: scolendar
+      POSTGRES_PASSWORD: passwdtest
+      POSTGRES_DB: scolendar
+
+  api:
     build: .
-    command: bash -c "./build_without_venv.sh && python manage.py runserver 0:8000"
-    container_name: scolendar_api
-    volumes:
-      - .:/scolendar
+    restart: always
     ports:
-      - "8000:8000"
+      - 8000:8000
+    links:
+      - "db:database"
+    depends_on:
+      - db

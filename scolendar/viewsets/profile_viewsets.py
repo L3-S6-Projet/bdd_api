@@ -198,7 +198,7 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                 for occ in occ_modifications:
                     occupancy = {
                         'subject_name': occ.occupancy.subject.name if occ.occupancy.occupancy_type != 'EXT' else None,
-                        'class_name': occ.occupancy.subject._class if occ.occupancy.occupancy_type != 'EXT' else None,
+                        'class_name': occ.occupancy.subject._class.name if occ.occupancy.occupancy_type != 'EXT' else None,
                         'occupancy_type': occ.occupancy.occupancy_type,
                         'occupancy_start': occ.new_start_datetime.timestamp(),
                         'occupancy_end': (occ.new_start_datetime + occ.new_duration).timestamp(),
