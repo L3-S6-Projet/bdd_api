@@ -94,14 +94,9 @@ You can now click on the Run button to start the server and navigate to http://1
 ### Run in a container
 The project can be run in a container.
 
-You first need to build the container:
+Just type the following command to build and run the project
 ```shell script
-docker build --tag scolendar:1.0 .
-```
-
-Once the build is done, you can run the container with the following command:
-```shell script
-docker run --publish 8000:8000 --detach --name scolendar scolendar:1.0
+docker-compose up --force-recreate --build api
 ```
 
 ## Use the API
