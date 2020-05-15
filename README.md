@@ -46,6 +46,7 @@ python manage.py runserver 0:8000
 Then open your browser and go to http://127.0.0.1:8000/swagger
 
 #### Run in PyCharm
+**The server can no longer be run in PyCharm because of the DB configuration.**
 ##### Setup
 First, you need to install Python (3.7 is preferred since the code was written for this version).
 
