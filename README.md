@@ -32,6 +32,7 @@ docker-compose up --force-recreate --build api
 
 ## Use the API
 All test users have the same password : `passwdtest`.
+
 Their usernames are:
 - Super user: `super`
 - Admin: `admin`
