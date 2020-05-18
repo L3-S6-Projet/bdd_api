@@ -18,7 +18,7 @@ class TokenHandlerMixin:
     """
 
     @staticmethod
-    def _get_token(request):
+    def _get_token(request) -> Token:
         received = request.META.get('HTTP_AUTHORIZATION')
         if received is None:
             raise Token.DoesNotExist
