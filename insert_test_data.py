@@ -168,13 +168,13 @@ def attribute_subject_groups():
 
 
 start_time = time.time()
+print()
+print('Disconnecting signals')
+disconnect_triggers()
+print()
+print('Creating super')
+create_super()
 if settings.DEBUG:
-    print()
-    print('Disconnecting signals')
-    disconnect_triggers()
-    print()
-    print('Creating super')
-    create_super()
     print()
     print('Creating admin')
     create_admin()

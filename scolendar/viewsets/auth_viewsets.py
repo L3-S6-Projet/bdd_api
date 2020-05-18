@@ -11,11 +11,17 @@ from scolendar.models import Student, Teacher
 
 
 class TokenHandlerMixin:
+    """
+    Removes code duplication related to getting the token from the HTTP Header and parsing it.
+
+    If a token is received, return the model instance of that token.
+    """
+
     @staticmethod
     def _get_token(request):
         received = request.META.get('HTTP_AUTHORIZATION')
         if received is None:
-            raise AttributeError('Token error')
+            raise Token.DoesNotExist
         data = received.split(' ')
         if data[0] != 'Bearer':
             raise AttributeError('Token error')
