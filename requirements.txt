@@ -30,6 +30,7 @@ ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 six==1.14.0
 sqlparse==0.3.1
-TatSu==4.4.0
+TatSu==5.5.0; python_version >= '3.8'
+TatSu==4.4.0; python_version < '3.8'
 uritemplate==3.0.1
 urllib3==1.25.9
