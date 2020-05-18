@@ -91,6 +91,9 @@ class ProfileViewSet(APIView, TokenHandlerMixin):
                                    status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InvalidCredentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
 
 class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
@@ -218,6 +221,9 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
 
 
 class ProfileICalFeed(APIView, TokenHandlerMixin):
@@ -273,5 +279,8 @@ class ProfileICalFeed(APIView, TokenHandlerMixin):
             token, created = ICalToken.objects.get_or_create(user=token.user)
             return RF_Response({'status': 'success', 'url': f'{request.build_absolute_uri("/api/feeds/ical/")}{token}'})
         except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
             return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)

@@ -18,6 +18,6 @@ RUN pip install -r requirements.txt
 RUN chmod +x docker_build.sh
 RUN chmod +x entrypoint.sh
 
-EXPOSE 8000
+EXPOSE 3030
 
 CMD ["sh", "entrypoint.sh"]

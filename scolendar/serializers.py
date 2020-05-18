@@ -39,16 +39,30 @@ class TeacherCreationSerializer(serializers.ModelSerializer):
         return ret
 
     def save(self, **kwargs):
+        def clean_phone_number(number_str: str) -> str:
+            number_str = ''.join(''.join(number_str.split(' ')).split('-'))
+            number_str = ' '.join(a + b for a, b in zip(number_str[::2], number_str[1::2]))
+            return number_str
+
         email = self.validated_data['email']
-        phone_number = self.validated_data['phone_number']
+        phone_number = clean_phone_number(self.validated_data['phone_number'])
         rank = self.validated_data['rank']
+        first_name = self.validated_data['first_name'].title()
+        last_name = self.validated_data['last_name'].upper()
 
         dt = datetime.now(tz=timezone(settings.TIME_ZONE))
         dt_str = dt.strftime("%y%j%H%S")
         username = f"{self.validated_data['last_name'][0].lower()}{dt_str}"
         password = self.data['password']
 
-        teacher = Teacher(email=email, username=username, phone_number=phone_number, rank=rank)
+        teacher = Teacher(
+            email=email,
+            username=username,
+            phone_number=phone_number,
+            rank=rank,
+            first_name=first_name,
+            last_name=last_name,
+        )
 
         teacher.set_password(password)
         teacher.save()
@@ -232,10 +246,13 @@ class SubjectCreationSerializer(serializers.ModelSerializer):
 
 
 class SubjectSerializer(serializers.ModelSerializer):
+    class_name = serializers.CharField(source='_class.name')
+
     class Meta:
         model = Subject
         fields = [
-            '_class',
+            'id',
+            'class_name',
             'name',
         ]
 

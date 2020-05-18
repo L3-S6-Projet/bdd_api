@@ -17,7 +17,7 @@ class TokenHandlerMixin:
         if received is None:
             raise AttributeError('Token error')
         data = received.split(' ')
-        if data[0] != 'BEARER':
+        if data[0] != 'Bearer':
             raise AttributeError('Token error')
         rec_token = data[-1]
         return Token.objects.get(key=rec_token)
@@ -55,10 +55,9 @@ class AuthViewSet(ObtainAuthToken, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     }, required=['status', 'code', ])),
         },

@@ -22,9 +22,9 @@ urlpatterns = [
     url(r'classrooms/(?P<classroom_id>[0-9]+)$', classroom_details),
     url(r'classrooms/(?P<classroom_id>[0-9]+)/occupancies$', classrooms_occupancies),
 
-    url(r'class$', class_),
-    url(r'class/(?P<class_id>[0-9]+)$', class_details),
-    url(r'class/(?P<class_id>[0-9]+)/occupancies$', class_occupancies),
+    url(r'classes$', class_),
+    url(r'classes/(?P<class_id>[0-9]+)$', class_details),
+    url(r'classes/(?P<class_id>[0-9]+)/occupancies$', class_occupancies),
 
     url(r'students$', students),
     url(r'students/(?P<student_id>[0-9]+)$', students_details),

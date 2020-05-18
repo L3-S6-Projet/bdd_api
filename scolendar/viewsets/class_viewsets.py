@@ -23,7 +23,7 @@ from scolendar.viewsets.common.schemas import occupancies_schema
 
 class ClassViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = ClassSerializer
-    queryset = Class.objects.all()
+    queryset = Class.objects.all().order_by('name')
     pagination_class = ClassResultSetPagination
 
     def get_queryset(self):
@@ -73,8 +73,8 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, value='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     }, required=['status', 'code', ]
                 )
             ),
@@ -84,8 +84,8 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     title='ErrorResponse',
                     type=TYPE_OBJECT,
                     properties={
-                        'status': Schema(type=TYPE_STRING, value='error'),
-                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     }, required=['status', 'code', ]
                 )
             ),
@@ -113,7 +113,7 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
             data = {
                 'status': 'success',
                 'total': response['count'],
-                'teachers': response['results'],
+                'classes': response['results'],
             }
             return RF_Response(data)
         except Token.DoesNotExist:
@@ -151,10 +151,9 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
@@ -167,10 +166,9 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
@@ -183,7 +181,7 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
                             enum=error_codes),
@@ -212,7 +210,10 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
             serializer.save()
             return RF_Response(serializer.data, status=status.HTTP_201_CREATED)
         except Token.DoesNotExist:
-            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
 
     @swagger_auto_schema(
@@ -238,10 +239,9 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidCredentials',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
@@ -254,10 +254,9 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InsufficientAuthorization',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
@@ -270,10 +269,9 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
-                            value='InvalidID',
                             enum=error_codes),
                     }, required=['status', 'code', ]
                 )
@@ -287,7 +285,7 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(
                             type=TYPE_STRING,
-                            value='error'),
+                            example='error'),
                         'code': Schema(
                             type=TYPE_STRING,
                             enum=error_codes),
@@ -323,7 +321,10 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                     return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
             return RF_Response({'status': 'success'})
         except Token.DoesNotExist:
-            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -363,7 +364,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -375,7 +376,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -387,7 +388,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -412,7 +413,10 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
             except Class.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
-            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
 
     @swagger_auto_schema(
@@ -437,7 +441,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -449,7 +453,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InsufficientAuthorization', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -461,7 +465,7 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -512,7 +516,10 @@ class ClassDetailViewSet(APIView, TokenHandlerMixin):
             except Classroom.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
-            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -532,7 +539,7 @@ class ClassOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -544,7 +551,7 @@ class ClassOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidCredentials', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -556,7 +563,7 @@ class ClassOccupancyViewSet(APIView, TokenHandlerMixin):
                     type=TYPE_OBJECT,
                     properties={
                         'status': Schema(type=TYPE_STRING, example='error'),
-                        'code': Schema(type=TYPE_STRING, value='InvalidID', enum=error_codes),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
                     },
                     required=['status', 'code', ]
                 )
@@ -651,5 +658,8 @@ class ClassOccupancyViewSet(APIView, TokenHandlerMixin):
             except Class.DoesNotExist:
                 return RF_Response({'status': 'error', 'code': 'InvalidID'}, status=status.HTTP_404_NOT_FOUND)
         except Token.DoesNotExist:
-            return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
