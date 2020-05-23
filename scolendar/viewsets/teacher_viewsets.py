@@ -38,7 +38,7 @@ occupancy_types = {
 
 class TeacherViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = TeacherSerializer
-    queryset = Teacher.objects.all().order_by('last_name', 'first_name')
+    queryset = Teacher.objects.all()
     pagination_class = TeacherResultSetPagination
 
     def get_queryset(self):
@@ -52,7 +52,7 @@ class TeacherViewSet(GenericAPIView, TokenHandlerMixin):
                     Q(_class__name__unaccent__icontains=query) |
                     Q(phone_number__unaccent__icontains=query)
                 )
-        return queryset
+        return queryset.order_by('last_name', 'first_name')
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all teachers.',

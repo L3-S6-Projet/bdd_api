@@ -163,6 +163,8 @@ SWAGGER_SETTINGS = {
         'drf_yasg.inspectors.CoreAPICompatInspector',
     ],
     'TAGS_SORTER': 'alpha',
+
+    'VALIDATOR_URL': 'http://swagger_validator:8080',
 }
 
 # Internationalization

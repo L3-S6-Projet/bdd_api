@@ -26,7 +26,7 @@ from scolendar.viewsets.common.schemas import occupancies_schema
 
 class SubjectViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = SubjectSerializer
-    queryset = Subject.objects.all().order_by('name')
+    queryset = Subject.objects.all()
     pagination_class = SubjectResultSetPagination
 
     def get_queryset(self):
@@ -38,7 +38,7 @@ class SubjectViewSet(GenericAPIView, TokenHandlerMixin):
                     Q(name__unaccent__icontains=query) |
                     Q(_class__name__unaccent_lower__trigram_similar=query)
                 )
-        return queryset
+        return queryset.order_by('_class__name', 'name')
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all subjects.',
@@ -119,7 +119,6 @@ class SubjectViewSet(GenericAPIView, TokenHandlerMixin):
             else:
                 serializer = self.get_serializer(queryset, many=True)
                 response = serializer.data
-            print(response)
             data = {
                 'status': 'success',
                 'total': response['count'],
@@ -152,7 +151,7 @@ class SubjectViewSet(GenericAPIView, TokenHandlerMixin):
                     properties={
                         'status': Schema(type=TYPE_STRING, example='success'),
                     },
-                    required=['status', 'username', 'password', ]
+                    required=['status', ]
                 )
             ),
             401: Response(

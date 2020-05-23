@@ -23,7 +23,7 @@ from scolendar.viewsets.common.schemas import occupancies_schema
 
 class ClassViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = ClassSerializer
-    queryset = Class.objects.all().order_by('name')
+    queryset = Class.objects.all()
     pagination_class = ClassResultSetPagination
 
     def get_queryset(self):
@@ -34,7 +34,7 @@ class ClassViewSet(GenericAPIView, TokenHandlerMixin):
                 queryset = queryset.filter(
                     Q(name__unaccent__icontains=query)
                 )
-        return queryset.order_by('id')
+        return queryset.order_by('name')
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all classes.',

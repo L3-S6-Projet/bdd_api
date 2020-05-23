@@ -10,12 +10,15 @@ swagger_info = openapi.Info(
     title=_('Scolendar API'),
     default_version='1.0.0',
     description=_(
-        'UE Projet - L3 Informatique AMU 2019-2020\nAll of the routes missing the `role-professor` or `role-student` tags are meant for administrators only - as stated in their descriptions.'),
+        'UE Projet - L3 Informatique AMU 2019-2020\nAll of the routes missing the `role-professor` or `role-student` '
+        'tags are meant for administrators only - as stated in their descriptions.'
+    ),
 )
 
 schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
+    validators=['ssv'],
 )
 
 urlpatterns = [

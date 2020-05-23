@@ -26,7 +26,7 @@ from scolendar.viewsets.common.schemas import teacher_list_schema, occupancies_s
 
 class StudentViewSet(GenericAPIView, TokenHandlerMixin):
     serializer_class = StudentSerializer
-    queryset = Student.objects.all().order_by('last_name', 'first_name')
+    queryset = Student.objects.all()
     pagination_class = StudentResultSetPagination
 
     def get_queryset(self):
@@ -39,7 +39,7 @@ class StudentViewSet(GenericAPIView, TokenHandlerMixin):
                     Q(last_name__unaccent__icontains=query) |
                     Q(_class__name__unaccent__icontains=query)
                 )
-        return queryset
+        return queryset.order_by('last_name', 'first_name')
 
     @swagger_auto_schema(
         operation_summary='Returns a paginated list of all students.',

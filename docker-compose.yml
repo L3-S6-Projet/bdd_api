@@ -11,6 +11,12 @@ services:
       POSTGRES_PASSWORD: passwdtest
       POSTGRES_DB: scolendar
 
+  swagger_validator:
+    image: swaggerapi/swagger-validator
+    restart: always
+    ports:
+      - 8080:8080
+
   api:
     build: .
     restart: always
@@ -18,5 +24,7 @@ services:
       - 3030:3030
     links:
       - "db:database"
+      - "swagger_validator"
     depends_on:
       - db
+      - swagger_validator

@@ -1,16 +1,17 @@
 from django.conf.urls import url
 
-from scolendar.views import session, profile, profile_occupancy_modifications, profile_iCal_feed, teachers, \
-    teachers_details, teacher_occupancies, teacher_subjects, classrooms, classroom_details, classrooms_occupancies, \
-    class_, class_details, class_occupancies, students, students_details, students_occupancies, students_subjects, \
-    subjects, subjects_details, subjects_occupancies, subjects_teachers, subjects_groups, subjects_groups_occupancies, \
-    occupancies, occupancies_details, i_cal_feed
+from scolendar.views import session, profile, profile_occupancy_modifications, profile_next_occupancy, \
+    profile_iCal_feed, teachers, teachers_details, teacher_occupancies, teacher_subjects, classrooms, \
+    classroom_details, classrooms_occupancies, class_, class_details, class_occupancies, students, students_details, \
+    students_occupancies, students_subjects, subjects, subjects_details, subjects_occupancies, subjects_teachers, \
+    subjects_groups, subjects_groups_occupancies, occupancies, occupancies_details, i_cal_feed
 
 urlpatterns = [
     url(r'session$', session),
 
     url(r'profile$', profile),
     url(r'profile/last-occupancies-modifications', profile_occupancy_modifications),
+    url(r'profile/next-occupancy', profile_next_occupancy),
     url(r'profile/feeds/ical', profile_iCal_feed),
 
     url(r'teachers$', teachers),

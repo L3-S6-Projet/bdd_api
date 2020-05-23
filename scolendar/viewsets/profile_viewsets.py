@@ -1,15 +1,19 @@
+from datetime import datetime
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from drf_yasg.openapi import Schema, Response, TYPE_OBJECT, TYPE_STRING, TYPE_ARRAY, TYPE_INTEGER
 from drf_yasg.utils import swagger_auto_schema
+from pytz import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response as RF_Response
 from rest_framework.views import APIView
 
 from scolendar.errors import error_codes
-from scolendar.models import occupancy_list, Student, OccupancyModification, ICalToken
+from scolendar.models import occupancy_list, Student, OccupancyModification, ICalToken, Occupancy
 from scolendar.viewsets.auth_viewsets import TokenHandlerMixin
 
 
@@ -218,6 +222,105 @@ class ProfileLastOccupancyEdit(APIView, TokenHandlerMixin):
                 return RF_Response({'status': 'success', 'modification': modifications})
             except Student.DoesNotExist:
                 pass
+        except Token.DoesNotExist:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
+                               status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ProfileNextOccupancy(APIView, TokenHandlerMixin):
+    @swagger_auto_schema(
+        operation_summary='Gets the user\'s next occupancy',
+        operation_description='',
+        responses={
+            200: Response(
+                description='Success',
+                schema=Schema(
+                    title='',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='success'),
+                        'occupancy': Schema(
+                            type=TYPE_OBJECT,
+                            properties={
+                                'id': Schema(type=TYPE_INTEGER, example=166),
+                                'classroom_name': Schema(type=TYPE_STRING, example='B.001'),
+                                'group_name': Schema(type=TYPE_STRING, example='Groupe 1'),
+                                'subject_name': Schema(type=TYPE_STRING, example='Algorithmique'),
+                                'teacher_name': Schema(type=TYPE_STRING, example='John Doe'),
+                                'start': Schema(type=TYPE_INTEGER, example=1587776227),
+                                'end': Schema(type=TYPE_INTEGER, example=1587776227),
+                                'occupancy_type': Schema(type=TYPE_STRING, enum=occupancy_list),
+                                'class_name': Schema(type=TYPE_STRING, example='L3 INFORMATIQUE'),
+                                'name': Schema(type=TYPE_STRING, example='Algorithmique TP Groupe 1'),
+                            },
+                            required=[
+                                'id',
+                                'group_name',
+                                'subject_name',
+                                'teacher_name',
+                                'start',
+                                'end',
+                                'occupancy_type',
+                                'name',
+                            ]
+                        ),
+                    },
+                    required=['status', 'occupancy', ]
+                )
+            ),
+            401: Response(
+                description='Invalid token (code=`InvalidCredentials`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+            403: Response(
+                description='Insufficient rights (administrator) (code=`InsufficientAuthorization`)',
+                schema=Schema(
+                    title='ErrorResponse',
+                    type=TYPE_OBJECT,
+                    properties={
+                        'status': Schema(type=TYPE_STRING, example='error'),
+                        'code': Schema(type=TYPE_STRING, enum=error_codes),
+                    },
+                    required=['status', 'code', ]
+                )
+            ),
+        },
+        tags=['role-professor', 'role-student']
+    )
+    def get(self, request):
+        try:
+            token = self._get_token(request)
+            if token.user.is_staff:
+                return RF_Response({'status': 'error', 'code': 'InsufficientAuthorization'},
+                                   status=status.HTTP_403_FORBIDDEN)
+            o = Occupancy.objects.filter(start_datetime__gte=datetime.now(tz=timezone(settings.TIME_ZONE))).order_by(
+                'start_datetime')[0]
+            event = {
+                'id': o.id,
+                'group_name': f'Groupe {o.group_number}',
+                'subject_name': o.subject.name,
+                'teacher_name': f'{o.teacher.first_name} {o.teacher.last_name}',
+                'start': o.start_datetime.timestamp(),
+                'end': o.end_datetime.timestamp(),
+                'occupancy_type': o.occupancy_type,
+                'name': o.name,
+            }
+            if o.subject:
+                event['class_name'] = o.subject._class.name
+            if o.classroom:
+                event['classroom_name'] = o.classroom.name
+            return RF_Response({'status': 'success', 'occupancy': event})
         except Token.DoesNotExist:
             return RF_Response({'status': 'error', 'code': 'InvalidCredentials'},
                                status=status.HTTP_401_UNAUTHORIZED)
