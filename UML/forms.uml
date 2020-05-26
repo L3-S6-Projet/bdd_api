@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/forms.py</OriginalElement>
+  <nodes>
+    <node x="126.0" y="395.0">Field</node>
+    <node x="364.0" y="496.0">scolendar.forms.ReadOnlyPasswordHashWidget</node>
+    <node x="122.5" y="0.0">Form</node>
+    <node x="626.0" y="145.0">scolendar.forms.UserChangeForm</node>
+    <node x="70.0" y="680.0">CharField</node>
+    <node x="350.0" y="101.0">scolendar.forms.UserCreationForm</node>
+    <node x="0.0" y="101.0">scolendar.forms.AdminPasswordChangeForm</node>
+    <node x="490.0" y="395.0">Widget</node>
+    <node x="0.0" y="781.0">scolendar.forms.UsernameField</node>
+    <node x="565.0" y="0.0">ModelForm</node>
+    <node x="0.0" y="496.0">scolendar.forms.ReadOnlyPasswordHashField</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.forms.UserCreationForm" target="ModelForm">
+      <point x="0.0" y="-123.5" />
+      <point x="478.0" y="76.0" />
+      <point x="588.75" y="76.0" />
+      <point x="-23.75" y="25.5" />
+    </edge>
+    <edge source="scolendar.forms.UserChangeForm" target="ModelForm">
+      <point x="0.0" y="-79.5" />
+      <point x="747.0" y="76.0" />
+      <point x="636.25" y="76.0" />
+      <point x="23.75" y="25.5" />
+    </edge>
+    <edge source="scolendar.forms.AdminPasswordChangeForm" target="Form">
+      <point x="0.0" y="-124.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.forms.ReadOnlyPasswordHashWidget" target="Widget">
+      <point x="0.0" y="-58.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.forms.ReadOnlyPasswordHashField" target="Field">
+      <point x="0.0" y="-69.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.forms.UsernameField" target="CharField">
+      <point x="0.0" y="-37.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="434.0" y="428.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

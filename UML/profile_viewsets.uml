@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/viewsets/profile_viewsets.py</OriginalElement>
+  <nodes>
+    <node x="409.0" y="133.0">scolendar.viewsets.profile_viewsets.ProfileNextOccupancy</node>
+    <node x="1325.0" y="133.0">scolendar.viewsets.profile_viewsets.ProfileViewSet</node>
+    <node x="1141.375" y="1.0">APIView</node>
+    <node x="853.0" y="133.0">scolendar.viewsets.profile_viewsets.ProfileLastOccupancyEdit</node>
+    <node x="0.0" y="133.0">scolendar.viewsets.profile_viewsets.ProfileICalFeed</node>
+    <node x="371.75" y="0.0">scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileNextOccupancy" target="APIView">
+      <point x="106.0" y="-26.5" />
+      <point x="727.0" y="113.0" />
+      <point x="1171.75" y="113.0" />
+      <point x="-10.125" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileLastOccupancyEdit" target="APIView">
+      <point x="113.0" y="-26.5" />
+      <point x="10.125" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileLastOccupancyEdit" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-113.0" y="-26.5" />
+      <point x="966.0" y="93.0" />
+      <point x="610.5" y="93.0" />
+      <point x="47.75" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileViewSet" target="APIView">
+      <point x="95.5" y="-26.5" />
+      <point x="1611.5" y="73.0" />
+      <point x="1212.25" y="73.0" />
+      <point x="30.375" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileNextOccupancy" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-106.0" y="-26.5" />
+      <point x="-47.75" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileICalFeed" target="APIView">
+      <point x="97.25" y="-26.5" />
+      <point x="291.75" y="103.0" />
+      <point x="1151.5" y="103.0" />
+      <point x="-30.375" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileICalFeed" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-97.25" y="-26.5" />
+      <point x="97.25" y="93.0" />
+      <point x="419.5" y="93.0" />
+      <point x="-143.25" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.profile_viewsets.ProfileViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-95.5" y="-26.5" />
+      <point x="1420.5" y="83.0" />
+      <point x="706.0" y="83.0" />
+      <point x="143.25" y="26.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.8094962362478286" x="853.5" y="93.0" />
+  <SelectedNodes>
+    <node>scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

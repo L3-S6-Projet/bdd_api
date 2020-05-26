@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/viewsets/subject_viewsets.py</OriginalElement>
+  <nodes>
+    <node x="412.25101068381224" y="942.9535790500559">scolendar.viewsets.subject_viewsets.SubjectTeacherViewSet</node>
+    <node x="849.506457831364" y="774.9502040423749">scolendar.viewsets.subject_viewsets.SubjectDetailViewSet</node>
+    <node x="28.452791340172155" y="16.80956703120964">scolendar.viewsets.subject_viewsets.SubjectOccupancyViewSet</node>
+    <node x="668.9972436811984" y="12.783962624592164">scolendar.viewsets.subject_viewsets.SubjectGroupViewSet</node>
+    <node x="1181.7220655925153" y="32.285413029953304">scolendar.viewsets.subject_viewsets.SubjectViewSet</node>
+    <node x="540.0795145254583" y="0.0">APIView</node>
+    <node x="1412.12392180008" y="331.62104525249134">GenericAPIView</node>
+    <node x="971.4033007334272" y="356.44243853951497">scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+    <node x="0.0" y="642.8906026984304">scolendar.viewsets.subject_viewsets.SubjectGroupOccupancyViewSet</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectGroupOccupancyViewSet" target="APIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectDetailViewSet" target="APIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectTeacherViewSet" target="APIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectTeacherViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectOccupancyViewSet" target="APIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectGroupOccupancyViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectViewSet" target="GenericAPIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectGroupViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectOccupancyViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectGroupViewSet" target="APIView">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.viewsets.subject_viewsets.SubjectDetailViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+  </edges>
+  <settings layout="Circular" zoom="0.8535645472061657" x="782.0" y="509.0" />
+  <SelectedNodes>
+    <node>GenericAPIView</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

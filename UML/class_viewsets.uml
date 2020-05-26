@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/viewsets/class_viewsets.py</OriginalElement>
+  <nodes>
+    <node x="0.0" y="179.0">scolendar.viewsets.class_viewsets.ClassOccupancyViewSet</node>
+    <node x="853.0" y="103.0">scolendar.viewsets.class_viewsets.ClassViewSet</node>
+    <node x="437.0" y="168.0">scolendar.viewsets.class_viewsets.ClassDetailViewSet</node>
+    <node x="84.0" y="1.0">APIView</node>
+    <node x="1053.5" y="1.0">GenericAPIView</node>
+    <node x="543.0" y="0.0">scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.viewsets.class_viewsets.ClassViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-88.5" y="-102.5" />
+      <point x="941.5" y="83.0" />
+      <point x="861.3333333333333" y="83.0" />
+      <point x="127.33333333333326" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.class_viewsets.ClassDetailViewSet" target="APIView">
+      <point x="-99.0" y="-37.5" />
+      <point x="536.0" y="73.0" />
+      <point x="144.75" y="73.0" />
+      <point x="20.25" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.class_viewsets.ClassDetailViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="99.0" y="-37.5" />
+      <point x="0.0" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.class_viewsets.ClassOccupancyViewSet" target="APIView">
+      <point x="-104.25" y="-26.5" />
+      <point x="-20.25" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.class_viewsets.ClassViewSet" target="GenericAPIView">
+      <point x="88.5" y="-102.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.class_viewsets.ClassOccupancyViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="104.25" y="-26.5" />
+      <point x="312.75" y="83.0" />
+      <point x="606.6666666666666" y="83.0" />
+      <point x="-127.33333333333337" y="26.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="603.5" y="154.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

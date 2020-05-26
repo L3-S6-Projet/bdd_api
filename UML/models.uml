@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/models.py</OriginalElement>
+  <nodes>
+    <node x="180.0" y="567.0">User</node>
+    <node x="0.0" y="273.0">scolendar.models.StudentClassTemp</node>
+    <node x="516.9999999999999" y="252.0">scolendar.models.TeacherSubject</node>
+    <node x="1523.0" y="229.0">scolendar.models.OccupancyModification</node>
+    <node x="465.0" y="668.0">scolendar.models.Class</node>
+    <node x="0.0" y="689.0">scolendar.models.Teacher</node>
+    <node x="1055.0" y="121.0">scolendar.models.Occupancy</node>
+    <node x="220.0" y="668.0">scolendar.models.Student</node>
+    <node x="510.5" y="567.0">BaseGroup</node>
+    <node x="1841.0" y="220.0">scolendar.models.Subject</node>
+    <node x="282.9999999999999" y="198.0">scolendar.models.ICalToken</node>
+    <node x="1002.7499999999999" y="0.0">Model</node>
+    <node x="1289.0" y="242.0">scolendar.models.Classroom</node>
+    <node x="785.9999999999999" y="220.0">scolendar.models.StudentSubject</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.models.StudentClassTemp" target="Model">
+      <point x="0.0" y="-48.5" />
+      <point x="131.5" y="71.0" />
+      <point x="1006.9374999999999" y="71.0" />
+      <point x="-29.3125" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.StudentSubject" target="Model">
+      <point x="0.0" y="-101.5" />
+      <point x="910.4999999999999" y="101.0" />
+      <point x="1032.0625" y="101.0" />
+      <point x="-4.1875" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Subject" target="Model">
+      <point x="0.0" y="-101.5" />
+      <point x="1941.0" y="71.0" />
+      <point x="1065.5625" y="71.0" />
+      <point x="29.3125" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Student" target="User">
+      <point x="0.0" y="-79.5" />
+      <point x="320.0" y="643.0" />
+      <point x="225.0" y="643.0" />
+      <point x="15.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Teacher" target="User">
+      <point x="0.0" y="-58.5" />
+      <point x="100.0" y="643.0" />
+      <point x="195.0" y="643.0" />
+      <point x="-15.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Classroom" target="Model">
+      <point x="0.0" y="-79.5" />
+      <point x="1396.0" y="91.0" />
+      <point x="1048.8125" y="91.0" />
+      <point x="12.5625" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Class" target="BaseGroup">
+      <point x="0.0" y="-68.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.TeacherSubject" target="Model">
+      <point x="0.0" y="-69.5" />
+      <point x="641.4999999999999" y="91.0" />
+      <point x="1023.6874999999999" y="91.0" />
+      <point x="-12.5625" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.ICalToken" target="Model">
+      <point x="0.0" y="-123.5" />
+      <point x="389.9999999999999" y="81.0" />
+      <point x="1015.3124999999999" y="81.0" />
+      <point x="-20.9375" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.Occupancy" target="Model">
+      <point x="0.0" y="-200.5" />
+      <point x="1162.0" y="101.0" />
+      <point x="1040.4375" y="101.0" />
+      <point x="4.1875" y="25.5" />
+    </edge>
+    <edge source="scolendar.models.OccupancyModification" target="Model">
+      <point x="0.0" y="-92.5" />
+      <point x="1672.0" y="81.0" />
+      <point x="1057.1875" y="81.0" />
+      <point x="20.9375" y="25.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.6783114992721979" x="1020.5" y="413.5" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

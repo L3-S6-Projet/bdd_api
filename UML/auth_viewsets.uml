@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/viewsets/auth_viewsets.py</OriginalElement>
+  <nodes>
+    <node x="402.0" y="1.0">ObtainAuthToken</node>
+    <node x="0.0" y="0.0">scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+    <node x="160.75" y="103.0">scolendar.viewsets.auth_viewsets.AuthViewSet</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.viewsets.auth_viewsets.AuthViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-85.0" y="-37.5" />
+      <point x="245.75" y="78.0" />
+      <point x="191.0" y="78.0" />
+      <point x="0.0" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.auth_viewsets.AuthViewSet" target="ObtainAuthToken">
+      <point x="85.0" y="-37.5" />
+      <point x="415.75" y="78.0" />
+      <point x="470.5" y="78.0" />
+      <point x="0.0" y="25.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="269.5" y="89.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

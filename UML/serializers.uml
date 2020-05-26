@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/serializers.py</OriginalElement>
+  <nodes>
+    <node x="372.0" y="540.0">scolendar.serializers.ClassCreationSerializer</node>
+    <node x="673.0609480812641" y="106.4040632054176">scolendar.serializers.OccupancySerializer</node>
+    <node x="123.0" y="152.0">scolendar.serializers.SubjectSerializer</node>
+    <node x="635.0" y="419.0">ModelSerializer</node>
+    <node x="647.0" y="676.0">scolendar.serializers.ClassSerializer</node>
+    <node x="1061.0" y="475.0">scolendar.serializers.SubjectCreationSerializer</node>
+    <node x="289.0" y="406.0">scolendar.serializers.TeacherSerializer</node>
+    <node x="418.0" y="0.0">scolendar.serializers.ClassroomSerializer</node>
+    <node x="1004.5316027088033" y="5.0383747178329585">scolendar.serializers.OccupancyCreationSerializer</node>
+    <node x="813.0" y="339.0">scolendar.serializers.ClassroomCreationSerializer</node>
+    <node x="0.0" y="562.0">scolendar.serializers.StudentSerializer</node>
+    <node x="791.0" y="849.0">scolendar.serializers.TeacherCreationSerializer</node>
+    <node x="315.0" y="920.0">scolendar.serializers.StudentCreationSerializer</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.serializers.ClassroomCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.SubjectCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.TeacherCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.ClassSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.TeacherSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.StudentSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.ClassCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.OccupancyCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.ClassroomSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.OccupancySerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.StudentCreationSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+    <edge source="scolendar.serializers.SubjectSerializer" target="ModelSerializer">
+      <point x="0.0" y="0.0" />
+      <point x="0.0" y="0.0" />
+    </edge>
+  </edges>
+  <settings layout="Orthogonal" zoom="0.8061874431301183" x="711.0" y="539.5" />
+  <SelectedNodes>
+    <node>scolendar.serializers.OccupancySerializer</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

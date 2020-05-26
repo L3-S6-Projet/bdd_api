@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/admin.py</OriginalElement>
+  <nodes>
+    <node x="1402.5" y="253.0">scolendar.admin.SubjectAdmin</node>
+    <node x="1142.474964234621" y="435.0636623748212">TabularInline</node>
+    <node x="730.5" y="232.0">scolendar.admin.ClassAdmin</node>
+    <node x="1140.5" y="253.0">scolendar.admin.ClassroomAdmin</node>
+    <node x="1213.974964234621" y="536.0636623748212">scolendar.admin.StudentSubjectInLine</node>
+    <node x="108.5" y="111.0">scolendar.admin.UserAdmin</node>
+    <node x="909.974964234621" y="536.0636623748212">scolendar.admin.TeacherSubjectInLine</node>
+    <node x="487.467095851216" y="399.6881258941345">scolendar.admin.StudentAdmin</node>
+    <node x="1042.5" y="0.0">ModelAdmin</node>
+    <node x="1650.5" y="275.0">scolendar.admin.ICalTokenAdmin</node>
+    <node x="468.5" y="242.0">scolendar.admin.OccupancyAdmin</node>
+    <node x="231.2567954220315" y="553.4742489270386">scolendar.admin.TeacherAdmin</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.admin.TeacherSubjectInLine" target="TabularInline">
+      <point x="0.0" y="-37.5" />
+      <point x="1051.974964234621" y="511.0636623748212" />
+      <point x="1173.224964234621" y="511.0636623748212" />
+      <point x="-30.75" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.ICalTokenAdmin" target="ModelAdmin">
+      <point x="0.0" y="-26.5" />
+      <point x="1771.5" y="71.0" />
+      <point x="1136.0" y="71.0" />
+      <point x="42.5" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.UserAdmin" target="ModelAdmin">
+      <point x="0.0" y="-190.5" />
+      <point x="278.5" y="71.0" />
+      <point x="1051.0" y="71.0" />
+      <point x="-42.5" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.OccupancyAdmin" target="ModelAdmin">
+      <point x="0.0" y="-59.5" />
+      <point x="589.5" y="81.0" />
+      <point x="1068.0" y="81.0" />
+      <point x="-25.5" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.ClassAdmin" target="ModelAdmin">
+      <point x="0.0" y="-69.5" />
+      <point x="925.5" y="91.0" />
+      <point x="1085.0" y="91.0" />
+      <point x="-8.5" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.StudentSubjectInLine" target="TabularInline">
+      <point x="0.0" y="-37.5" />
+      <point x="1355.974964234621" y="511.0636623748212" />
+      <point x="1234.724964234621" y="511.0636623748212" />
+      <point x="30.75" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.StudentAdmin" target="scolendar.admin.UserAdmin">
+      <point x="0.0" y="-124.5" />
+      <point x="443.0" y="517.0" />
+      <point x="363.5" y="517.0" />
+      <point x="85.0" y="190.5" />
+    </edge>
+    <edge source="scolendar.admin.SubjectAdmin" target="ModelAdmin">
+      <point x="0.0" y="-48.5" />
+      <point x="1516.5" y="81.0" />
+      <point x="1119.0" y="81.0" />
+      <point x="25.5" y="25.5" />
+    </edge>
+    <edge source="scolendar.admin.TeacherAdmin" target="scolendar.admin.UserAdmin">
+      <point x="0.0" y="-92.5" />
+      <point x="287.7846924177396" y="517.0" />
+      <point x="193.5" y="517.0" />
+      <point x="-85.0" y="190.5" />
+    </edge>
+    <edge source="scolendar.admin.ClassroomAdmin" target="ModelAdmin">
+      <point x="0.0" y="-48.5" />
+      <point x="1261.5" y="91.0" />
+      <point x="1102.0" y="91.0" />
+      <point x="8.5" y="25.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.7745152354570637" x="1000.5" y="369.5" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+

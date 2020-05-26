@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Python</ID>
+  <OriginalElement>#D:/Users/Yash/Documents/Work/Fac/License/L3/S6/Projet/ensign/scolendar/viewsets/classroom_viewsets.py</OriginalElement>
+  <nodes>
+    <node x="902.0" y="179.0">scolendar.viewsets.classroom_viewsets.ClassroomOccupancyViewSet</node>
+    <node x="1196.0" y="1.0">APIView</node>
+    <node x="430.0" y="168.0">scolendar.viewsets.classroom_viewsets.ClassroomDetailViewSet</node>
+    <node x="37.499999999999886" y="1.0">GenericAPIView</node>
+    <node x="352.0" y="0.0">scolendar.viewsets.auth_viewsets.TokenHandlerMixin</node>
+    <node x="0.0" y="103.0">scolendar.viewsets.classroom_viewsets.ClassroomViewSet</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomOccupancyViewSet" target="APIView">
+      <point x="118.25" y="-26.5" />
+      <point x="20.25" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomDetailViewSet" target="APIView">
+      <point x="113.0" y="-37.5" />
+      <point x="769.0" y="83.0" />
+      <point x="1216.25" y="83.0" />
+      <point x="-20.25" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomOccupancyViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-118.25" y="-26.5" />
+      <point x="1020.25" y="73.0" />
+      <point x="670.3333333333333" y="73.0" />
+      <point x="127.33333333333326" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomViewSet" target="GenericAPIView">
+      <point x="-102.5" y="-102.5" />
+      <point x="0.0" y="25.5" />
+    </edge>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomDetailViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="-113.0" y="-37.5" />
+      <point x="0.0" y="26.5" />
+    </edge>
+    <edge source="scolendar.viewsets.classroom_viewsets.ClassroomViewSet" target="scolendar.viewsets.auth_viewsets.TokenHandlerMixin">
+      <point x="102.5" y="-102.5" />
+      <point x="307.5" y="83.0" />
+      <point x="415.6666666666667" y="83.0" />
+      <point x="-127.33333333333331" y="26.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="687.5" y="154.0" />
+  <SelectedNodes>
+    <node>scolendar.viewsets.classroom_viewsets.ClassroomViewSet</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+  </Categories>
+</Diagram>
+
